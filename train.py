@@ -192,7 +192,8 @@ def make_feed_dict(data, init=False):
             feed_dict.update({ys[i]: y[i] for i in range(args.nr_gpu)})
 
     if args.spatial_conditional:
-        feed_dict.update({hs[i]: x[i] for i in range(args.nr_gpu)})
+        if not init:
+            feed_dict.update({hs[i]: x[i] for i in range(args.nr_gpu)})
     return feed_dict
 
 # //////////// perform training //////////////

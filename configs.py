@@ -13,6 +13,8 @@ def config_args(args, config):
         args.batch_size = config["batch_size"]
     if "init_batch_size" in config:
         args.init_batch_size = config["init_batch_size"]
+    if "spatial_conditional" in config:
+        args.spatial_conditional = config['spatial_conditional']
 
 
 

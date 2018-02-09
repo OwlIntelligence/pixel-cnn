@@ -19,6 +19,9 @@ from pixel_cnn_pp import nn
 from pixel_cnn_pp.model import model_spec
 from utils import plotting
 
+# self define modules
+from configs import config_args, configs
+
 # -----------------------------------------------------------------------------
 parser = argparse.ArgumentParser()
 # data I/O
@@ -48,7 +51,9 @@ parser.add_argument('-ns', '--num_samples', type=int, default=1, help='How many 
 # reproducibility
 parser.add_argument('-s', '--seed', type=int, default=1, help='Random seed to use')
 args = parser.parse_args()
+config_args(args, configs['test'])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
+quit()
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility

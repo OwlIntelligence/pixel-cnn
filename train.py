@@ -77,7 +77,7 @@ elif args.data_set == 'imagenet':
     DataLoader = imagenet_data.DataLoader
 else:
     raise("unsupported dataset")
-train_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
+train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
 test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional)
 obs_shape = train_data.get_observation_size() # e.g. a tuple (32,32,3)
 assert len(obs_shape) == 3, 'assumed right now'

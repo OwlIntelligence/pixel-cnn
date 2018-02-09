@@ -1,6 +1,10 @@
 def config_args(args, config):
     for key in config:
-        eval("args.{0}".format(key)) = config[key]
+        value = config[key]
+        if type(value)==str:
+            eval("args.{0} = '{1}'".format(key), config[key])
+        else:
+            eval("args.{0} = {1}".format(key), config[key])
 
 configs = {}
 

@@ -216,6 +216,36 @@ def conv2d(x, num_filters, filter_size=[3,3], stride=[1,1], pad='SAME', nonlinea
         return x
 
 @add_arg_scope
+def conv2d_1(x, num_filters, filter_size=[3,3], stride=[1,1], pad='SAME', nonlinearity=None, init_scale=1., counters={}, init=False, ema=None, **kwargs):
+    ''' convolutional layer '''
+    name = get_name('conv2d_1', counters)
+    with tf.variable_scope(name):
+        V = get_var_maybe_avg('V', ema, shape=filter_size+[int(x.get_shape()[-1]),num_filters], dtype=tf.float32,
+                              initializer=tf.random_normal_initializer(0, 0.05), trainable=True)
+        g = get_var_maybe_avg('g', ema, shape=[num_filters], dtype=tf.float32,
+                              initializer=tf.constant_initializer(1.), trainable=True)
+        b = get_var_maybe_avg('b', ema, shape=[num_filters], dtype=tf.float32,
+                              initializer=tf.constant_initializer(0.), trainable=True)
+
+        # use weight normalization (Salimans & Kingma, 2016)
+        W = tf.reshape(g, [1, 1, 1, num_filters]) * tf.nn.l2_normalize(V, [0, 1, 2])
+
+        # calculate convolutional layer output
+        x = tf.nn.bias_add(tf.nn.conv2d(x, W, [1] + stride + [1], pad), b)
+
+        if init:  # normalize x
+            m_init, v_init = tf.nn.moments(x, [0,1,2])
+            scale_init = init_scale / tf.sqrt(v_init + 1e-10)
+            with tf.control_dependencies([g.assign(g * scale_init), b.assign_add(-m_init * scale_init)]):
+                x = tf.identity(x)
+
+        # apply nonlinearity
+        if nonlinearity is not None:
+            x = nonlinearity(x)
+
+        return x
+
+@add_arg_scope
 def deconv2d(x, num_filters, filter_size=[3,3], stride=[1,1], pad='SAME', nonlinearity=None, init_scale=1., counters={}, init=False, ema=None, **kwargs):
     ''' transposed convolutional layer '''
     name = get_name('deconv2d', counters)
@@ -279,7 +309,7 @@ def gated_resnet(x, a=None, h=None, nonlinearity=concat_elu, conv=conv2d, init=F
         hs = int_shape(x)
         print(hs)
         if len(hs) > 2:
-            c2 += conv2d(nonlinearity(h), 2 * num_filters, filter_size=[1,1], pad='SAME', init_scale=0.1)
+            c2 += conv2d_1(nonlinearity(h), 2 * num_filters, filter_size=[1,1], pad='SAME', init_scale=0.1)
         else:
             with tf.variable_scope(get_name('conditional_weights', counters)):
                 hw = get_var_maybe_avg('hw', ema, shape=[int_shape(h)[-1], 2 * num_filters], dtype=tf.float32,

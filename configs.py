@@ -18,13 +18,12 @@ def config_args(args, config):
 
 configs = {}
 
-configs['test'] = {
-    "data_dir": "/data/ziz/not-backed-up/jxu/CelebA",
-    "save_dir": "/data/ziz/jxu/save-backward-rename",
+configs['cifar'] = {
+    "data_dir": "/data/ziz/not-backed-up/jxu/cifar",
+    "save_dir": "/data/ziz/jxu/models/cifar-test",
     "nr_filters": 160,
     "nr_resnet": 5,
-    "data_set": "celeba",
+    "data_set": "cifar",
     "batch_size": 6,
     "init_batch_size": 6,
-    "nr_gpu": 8,
 }

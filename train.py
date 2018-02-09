@@ -51,9 +51,8 @@ parser.add_argument('-ns', '--num_samples', type=int, default=1, help='How many 
 # reproducibility
 parser.add_argument('-s', '--seed', type=int, default=1, help='Random seed to use')
 args = parser.parse_args()
-config_args(args, configs['test'])
+config_args(args, configs['cifar'])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
-quit()
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility

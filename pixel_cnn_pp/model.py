@@ -17,7 +17,7 @@ def model_spec(x, h=None, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_f
     """
 
     counters = {}
-    with arg_scope([nn.conv2d, nn.deconv2d, nn.gated_resnet, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p):
+    with arg_scope([nn.conv2d, nn.conv2d_1, nn.deconv2d, nn.gated_resnet, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p):
 
         # parse resnet nonlinearity argument
         if resnet_nonlinearity == 'concat_elu':
@@ -114,4 +114,3 @@ def model_spec(x, h=None, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_f
                 assert len(ul_list) == 0
 
                 return x_out
-

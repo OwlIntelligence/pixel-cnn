@@ -26,4 +26,5 @@ configs['cifar'] = {
     "data_set": "cifar",
     "batch_size": 6,
     "init_batch_size": 6,
+    "spatial_conditional": True,
 }

@@ -276,12 +276,16 @@ def gated_resnet(x, a=None, h=None, nonlinearity=concat_elu, conv=conv2d, init=F
 
     # add projection of h vector if included: conditional generation
     if h is not None:
-        with tf.variable_scope(get_name('conditional_weights', counters)):
-            hw = get_var_maybe_avg('hw', ema, shape=[int_shape(h)[-1], 2 * num_filters], dtype=tf.float32,
-                                    initializer=tf.random_normal_initializer(0, 0.05), trainable=True)
-        if init:
-            hw = hw.initialized_value()
-        c2 += tf.reshape(tf.matmul(h, hw), [xs[0], 1, 1, 2 * num_filters])
+        hs = int_shape(x)
+        if len(hs) > 2:
+            c2 += conv2d(nonlinearity(h), num_filters * 2, init_scale=0.1)
+        else:
+            with tf.variable_scope(get_name('conditional_weights', counters)):
+                hw = get_var_maybe_avg('hw', ema, shape=[int_shape(h)[-1], 2 * num_filters], dtype=tf.float32,
+                                        initializer=tf.random_normal_initializer(0, 0.05), trainable=True)
+            if init:
+                hw = hw.initialized_value()
+            c2 += tf.reshape(tf.matmul(h, hw), [xs[0], 1, 1, 2 * num_filters])
 
     a, b = tf.split(c2, 2, 3)
     c3 = a * tf.nn.sigmoid(b)

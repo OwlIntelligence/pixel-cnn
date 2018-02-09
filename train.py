@@ -36,6 +36,7 @@ parser.add_argument('-n', '--nr_filters', type=int, default=160, help='Number of
 parser.add_argument('-m', '--nr_logistic_mix', type=int, default=10, help='Number of logistic components in the mixture. Higher = more flexible model')
 parser.add_argument('-z', '--resnet_nonlinearity', type=str, default='concat_elu', help='Which nonlinearity to use in the ResNet layers. One of "concat_elu", "elu", "relu" ')
 parser.add_argument('-c', '--class_conditional', dest='class_conditional', action='store_true', help='Condition generative model on labels?')
+parser.add_argument('-sc', '--spatial_conditional', dest='spatial_conditional', action='store_true', help='Condition on spatial latent codes?')
 parser.add_argument('-ed', '--energy_distance', dest='energy_distance', action='store_true', help='use energy distance in place of likelihood')
 # optimization
 parser.add_argument('-l', '--learning_rate', type=float, default=0.001, help='Base learning rate')
@@ -76,7 +77,7 @@ elif args.data_set == 'imagenet':
     DataLoader = imagenet_data.DataLoader
 else:
     raise("unsupported dataset")
-train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
+train_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
 test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional)
 obs_shape = train_data.get_observation_size() # e.g. a tuple (32,32,3)
 assert len(obs_shape) == 3, 'assumed right now'
@@ -94,6 +95,9 @@ if args.class_conditional:
     h_sample = [tf.one_hot(tf.Variable(y_sample[i], trainable=False), num_labels) for i in range(args.nr_gpu)]
     ys = [tf.placeholder(tf.int32, shape=(args.batch_size,)) for i in range(args.nr_gpu)]
     hs = [tf.one_hot(ys[i], num_labels) for i in range(args.nr_gpu)]
+elif args.spatial_conditional:
+    lat_shape = obs_shape
+    hs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + lat_shape ) for i in range(args.nr_gpu)]
 else:
     h_init = None
     h_sample = [None] * args.nr_gpu
@@ -184,6 +188,9 @@ def make_feed_dict(data, init=False):
         if y is not None:
             y = np.split(y, args.nr_gpu)
             feed_dict.update({ys[i]: y[i] for i in range(args.nr_gpu)})
+
+    if args.spatial_conditional:
+        feed_dict.update({hs[i]: x[i] for i in range(args.nr_gpu)})
     return feed_dict
 
 # //////////// perform training //////////////

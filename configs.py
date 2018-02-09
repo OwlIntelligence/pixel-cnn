@@ -2,7 +2,7 @@ def config_args(args, config):
     for key in config:
         value = config[key]
         if type(value)==str:
-            eval(r"args.{0}=\"{1}\"".format(key, config[key]))
+            eval(r"args.{0}="{1}"".format(key, config[key]))
         else:
             eval("args.{0}={1}".format(key, config[key]))
 

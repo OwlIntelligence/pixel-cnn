@@ -98,6 +98,8 @@ if args.class_conditional:
 elif args.spatial_conditional:
     lat_shape = obs_shape
     hs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + lat_shape ) for i in range(args.nr_gpu)]
+    h_init = None
+    h_sample = [None] * args.nr_gpu
 else:
     h_init = None
     h_sample = [None] * args.nr_gpu

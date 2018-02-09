@@ -277,6 +277,7 @@ def gated_resnet(x, a=None, h=None, nonlinearity=concat_elu, conv=conv2d, init=F
     # add projection of h vector if included: conditional generation
     if h is not None:
         hs = int_shape(x)
+        print(hs)
         if len(hs) > 2:
             c2 += conv2d(nonlinearity(h), 2 * num_filters, init_scale=0.1)
         else:

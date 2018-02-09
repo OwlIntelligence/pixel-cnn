@@ -26,7 +26,7 @@ configs['cifar'] = {
     "nr_filters": 160,
     "nr_resnet": 5,
     "data_set": "cifar",
-    "batch_size": 6,
-    "init_batch_size": 6,
+    "batch_size": 8,
+    "init_batch_size": 8,
     "spatial_conditional": True,
 }

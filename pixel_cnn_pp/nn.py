@@ -278,8 +278,8 @@ def gated_resnet(x, a=None, h=None, nonlinearity=concat_elu, conv=conv2d, init=F
     if h is not None:
         hs = int_shape(x)
         if len(hs) > 2:
-            print("yes, I am here")
-            c2 += conv2d(nonlinearity(h), num_filters * 2, init_scale=0.1)
+            with tf.variable_scope(get_name('spatial_conditional_weights', counters)):
+                c2 += conv2d(nonlinearity(h), num_filters * 2, init_scale=0.1)
         else:
             with tf.variable_scope(get_name('conditional_weights', counters)):
                 hw = get_var_maybe_avg('hw', ema, shape=[int_shape(h)[-1], 2 * num_filters], dtype=tf.float32,

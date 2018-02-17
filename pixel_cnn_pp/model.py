@@ -27,7 +27,7 @@ def model_spec(x, h=None, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_f
         elif resnet_nonlinearity == 'relu':
             resnet_nonlinearity = tf.nn.relu
         else:
-            raise('resnet nonlinearity ' + resnet_nonlinearity + ' is not supported')
+            raise('resnet nonlinearity ' + resnet_nonlinearity + ' is not supported'
 
         with arg_scope([nn.gated_resnet], nonlinearity=resnet_nonlinearity, h=h):
 

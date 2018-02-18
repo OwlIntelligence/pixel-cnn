@@ -107,7 +107,10 @@ else:
 
 # create the model
 model_opt = { 'nr_resnet': args.nr_resnet, 'nr_filters': args.nr_filters, 'nr_logistic_mix': args.nr_logistic_mix, 'resnet_nonlinearity': args.resnet_nonlinearity, 'energy_distance': args.energy_distance }
-model = tf.make_template('model', model_spec)
+if args.spatial_conditional:
+    model = tf.make_template('model', model_spec, h=hs[0])
+else:
+    model = tf.make_template('model', model_spec)
 
 # run once for data dependent initialization of parameters
 init_pass = model(x_init, h_init, init=True, dropout_p=args.dropout_p, **model_opt)

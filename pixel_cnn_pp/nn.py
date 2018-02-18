@@ -112,7 +112,6 @@ def get_var_maybe_avg(var_name, ema, **kwargs):
     ''' utility for retrieving polyak averaged params '''
     print(tf.get_variable_scope().name + "/" + var_name)
     v = tf.get_variable(var_name, **kwargs)
-    print('----------')
     if ema is not None:
         v = ema.average(v)
     return v
@@ -222,10 +221,8 @@ def conv2d_1(x, num_filters, filter_size=[3,3], stride=[1,1], pad='SAME', nonlin
     ''' convolutional layer '''
     name = get_name('conv2d_1', counters)
     with tf.variable_scope(name):
-        print("X")
         V = get_var_maybe_avg('V', ema, shape=filter_size+[int(x.get_shape()[-1]),num_filters], dtype=tf.float32,
                               initializer=tf.random_normal_initializer(0, 0.05), trainable=True)
-        print("Y")
         g = get_var_maybe_avg('g', ema, shape=[num_filters], dtype=tf.float32,
                               initializer=tf.constant_initializer(1.), trainable=True)
         b = get_var_maybe_avg('b', ema, shape=[num_filters], dtype=tf.float32,
@@ -312,7 +309,7 @@ def gated_resnet(x, a=None, h=None, nonlinearity=concat_elu, conv=conv2d, init=F
     if h is not None:
         hs = int_shape(x)
         if len(hs) > 2:
-            c2 += conv2d_1(nonlinearity(h), 2 * num_filters) #, filter_size=[1,1], pad='SAME', init_scale=0.1)
+            c2 += conv2d_1(nonlinearity(h), 2 * num_filters, filter_size=[1,1], pad='SAME', init_scale=0.1)
         else:
             with tf.variable_scope(get_name('conditional_weights', counters)):
                 hw = get_var_maybe_avg('hw', ema, shape=[int_shape(h)[-1], 2 * num_filters], dtype=tf.float32,

@@ -182,6 +182,8 @@ def make_feed_dict(data, init=False):
     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
     if init:
         feed_dict = {x_init: x}
+        if h_init is not None:
+            feed_dict.update({h_init: x})
         if y is not None:
             feed_dict.update({y_init: y})
     else:

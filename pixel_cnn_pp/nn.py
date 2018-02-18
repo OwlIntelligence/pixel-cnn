@@ -110,7 +110,9 @@ def sample_from_discretized_mix_logistic(l,nr_mix):
 
 def get_var_maybe_avg(var_name, ema, **kwargs):
     ''' utility for retrieving polyak averaged params '''
+    print('b')
     v = tf.get_variable(var_name, **kwargs)
+    print('a')
     if ema is not None:
         v = ema.average(v)
     return v
@@ -220,7 +222,7 @@ def conv2d_1(x, num_filters, filter_size=[3,3], stride=[1,1], pad='SAME', nonlin
     ''' convolutional layer '''
     name = get_name('conv2d_1', counters)
     with tf.variable_scope(name):
-        print("x")
+        print("X")
         V = get_var_maybe_avg('V', ema, shape=filter_size+[int(x.get_shape()[-1]),num_filters], dtype=tf.float32,
                               initializer=tf.random_normal_initializer(0, 0.05), trainable=True)
         print("Y")
@@ -309,7 +311,6 @@ def gated_resnet(x, a=None, h=None, nonlinearity=concat_elu, conv=conv2d, init=F
     # add projection of h vector if included: conditional generation
     if h is not None:
         hs = int_shape(x)
-        print(hs)
         if len(hs) > 2:
             c2 += conv2d_1(nonlinearity(h), 2 * num_filters)#, filter_size=[1,1], pad='SAME', init_scale=0.1)
         else:

@@ -320,6 +320,8 @@ def gated_resnet(x, a=None, h=None, nonlinearity=concat_elu, conv=conv2d, init=F
             if init:
                 hw = hw.initialized_value()
             c2 += tf.reshape(tf.matmul(h, hw), [xs[0], 1, 1, 2 * num_filters])
+    else:
+        print("h is None")
 
     a, b = tf.split(c2, 2, 3)
     c3 = a * tf.nn.sigmoid(b)

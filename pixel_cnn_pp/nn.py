@@ -110,7 +110,7 @@ def sample_from_discretized_mix_logistic(l,nr_mix):
 
 def get_var_maybe_avg(var_name, ema, **kwargs):
     ''' utility for retrieving polyak averaged params '''
-    print(tf.get_variable_scope() + "/" + var_name)
+    print(tf.get_variable_scope().name + "/" + var_name)
     v = tf.get_variable(var_name, **kwargs)
     print('----------')
     if ema is not None:

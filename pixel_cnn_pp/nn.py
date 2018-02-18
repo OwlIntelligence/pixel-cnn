@@ -217,9 +217,12 @@ def conv2d(x, num_filters, filter_size=[3,3], stride=[1,1], pad='SAME', nonlinea
         return x
 
 @add_arg_scope
-def conv2d_1(x, num_filters, filter_size=[3,3], stride=[1,1], pad='SAME', nonlinearity=None, init_scale=1., counters={}, init=False, ema=None, **kwargs):
-    ''' convolutional layer '''
-    name = get_name('conv2d_1', counters)
+def conv2d_1x1(x, num_filters, nonlinearity=None, init_scale=1., counters={}, init=False, ema=None, **kwargs):
+    ''' 1x1 convolutional layer '''
+    filter_size = [1,1]
+    stride = [1,1]
+    pad = 'SAME'
+    name = get_name('conv2d_1x1', counters)
     with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
         V = get_var_maybe_avg('V', ema, shape=filter_size+[int(x.get_shape()[-1]),num_filters], dtype=tf.float32,
                               initializer=tf.random_normal_initializer(0, 0.05), trainable=True)
@@ -309,7 +312,7 @@ def gated_resnet(x, a=None, h=None, nonlinearity=concat_elu, conv=conv2d, init=F
     if h is not None:
         hs = int_shape(x)
         if len(hs) > 2:
-            c2 += conv2d_1(nonlinearity(h), 2 * num_filters, filter_size=[1,1], pad='SAME', init_scale=0.1)
+            c2 += conv2d_1x1(nonlinearity(h), 2 * num_filters, init=init)
         else:
             with tf.variable_scope(get_name('conditional_weights', counters)):
                 hw = get_var_maybe_avg('hw', ema, shape=[int_shape(h)[-1], 2 * num_filters], dtype=tf.float32,

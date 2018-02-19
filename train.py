@@ -201,21 +201,45 @@ def make_feed_dict(data, init=False):
     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
     if init:
         feed_dict = {x_init: x}
-        if h_init is not None:
-            feed_dict.update({h_init: x})
-        if y is not None:
-            feed_dict.update({y_init: y})
+        if gh_init is not None:
+            pass #feed_dict.update({gh_init: x})
+        if sh_init is not None:
+            mx = np.ones_like(x)
+            mx[:, :x.shape[1]/2, :, :] = 0.
+            feed_dict.update({sh_init: x * mx})
     else:
         x = np.split(x, args.nr_gpu)
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
-        if y is not None:
-            y = np.split(y, args.nr_gpu)
-            feed_dict.update({ys[i]: y[i] for i in range(args.nr_gpu)})
-
-    if args.spatial_conditional:
-        if not init:
-            feed_dict.update({hs[i]: x[i] for i in range(args.nr_gpu)})
+        mx = np.ones_like(x[0])
+        mx[:, :x[0].shape[1]/2, :, :] = 0.
+        if args.spatial_conditional:
+            feed_dict.update({shs[i]: x[i]*mx for i in range(args.nr_gpu)})
     return feed_dict
+
+# def make_feed_dict(data, init=False):
+#     if type(data) is tuple:
+#         x,y = data
+#     else:
+#         x = data
+#         y = None
+#     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
+#     if init:
+#         feed_dict = {x_init: x}
+#         if h_init is not None:
+#             feed_dict.update({h_init: x})
+#         if y is not None:
+#             feed_dict.update({y_init: y})
+#     else:
+#         x = np.split(x, args.nr_gpu)
+#         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
+#         if y is not None:
+#             y = np.split(y, args.nr_gpu)
+#             feed_dict.update({ys[i]: y[i] for i in range(args.nr_gpu)})
+#
+#     if args.spatial_conditional:
+#         if not init:
+#             feed_dict.update({hs[i]: x[i] for i in range(args.nr_gpu)})
+#     return feed_dict
 
 # //////////// perform training //////////////
 if not os.path.exists(args.save_dir):

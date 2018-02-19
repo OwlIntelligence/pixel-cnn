@@ -110,7 +110,6 @@ def sample_from_discretized_mix_logistic(l,nr_mix):
 
 def get_var_maybe_avg(var_name, ema, **kwargs):
     ''' utility for retrieving polyak averaged params '''
-    print(tf.get_variable_scope().name + "/" + var_name)
     v = tf.get_variable(var_name, **kwargs)
     if ema is not None:
         v = ema.average(v)
@@ -298,11 +297,9 @@ def nin(x, num_units, **kwargs):
 @add_arg_scope
 def gated_resnet(x, a=None, gh=None, sh=None, nonlinearity=concat_elu, conv=conv2d, init=False, counters={}, ema=None, dropout_p=0., **kwargs):
     xs = int_shape(x)
-    print(xs)
     num_filters = xs[-1]
 
     c1 = conv(nonlinearity(x), num_filters)
-    print(int_shape(c1))
     if a is not None: # add short-cut connection if auxiliary input 'a' is given
         c1 += nin(nonlinearity(a), num_filters)
     c1 = nonlinearity(c1)

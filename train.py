@@ -205,13 +205,13 @@ def make_feed_dict(data, init=False):
             pass #feed_dict.update({gh_init: x})
         if sh_init is not None:
             mx = np.ones_like(x)
-            mx[:, :x.shape[1]/2, :, :] = 0.
+            mx[:, :x.shape[1]//2, :, :] = 0.
             feed_dict.update({sh_init: x * mx})
     else:
         x = np.split(x, args.nr_gpu)
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
         mx = np.ones_like(x[0])
-        mx[:, :x[0].shape[1]/2, :, :] = 0.
+        mx[:, :x[0].shape[1]//2, :, :] = 0.
         if args.spatial_conditional:
             feed_dict.update({shs[i]: x[i]*mx for i in range(args.nr_gpu)})
     return feed_dict

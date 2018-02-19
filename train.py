@@ -97,6 +97,7 @@ if args.spatial_conditional:
     latent_shape = obs_shape ##
     sh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + latent_shape)
     shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + latent_shape ) for i in range(args.nr_gpu)]
+    sh_sample = shs
 
 
 

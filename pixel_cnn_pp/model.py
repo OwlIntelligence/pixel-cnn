@@ -50,13 +50,13 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
             ul_list.append(nn.down_right_shifted_conv2d(ul_list[-1], num_filters=nr_filters, stride=[2, 2]))
             for rep in range(nr_resnet):
                 u_list.append(nn.gated_resnet(u_list[-1], sh=sh_2, conv=nn.down_shifted_conv2d))
-                ul_list.append(nn.gated_resnet(ul_list[-1], sh=sh_2, u_list[-1], conv=nn.down_right_shifted_conv2d))
+                ul_list.append(nn.gated_resnet(ul_list[-1], u_list[-1], sh=sh_2, conv=nn.down_right_shifted_conv2d))
 
             u_list.append(nn.down_shifted_conv2d(u_list[-1], num_filters=nr_filters, stride=[2, 2]))
             ul_list.append(nn.down_right_shifted_conv2d(ul_list[-1], num_filters=nr_filters, stride=[2, 2]))
             for rep in range(nr_resnet):
                 u_list.append(nn.gated_resnet(u_list[-1], sh=sh_4, conv=nn.down_shifted_conv2d))
-                ul_list.append(nn.gated_resnet(ul_list[-1], sh=sh_4, u_list[-1], conv=nn.down_right_shifted_conv2d))
+                ul_list.append(nn.gated_resnet(ul_list[-1], u_list[-1], sh=sh_4, conv=nn.down_right_shifted_conv2d))
 
             # remember nodes
             for t in u_list+ul_list:

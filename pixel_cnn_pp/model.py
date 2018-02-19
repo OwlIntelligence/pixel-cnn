@@ -33,7 +33,7 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
 
             if spatial_conditional:
                 h = nn.latent_deconv_net(sh)
-                print(int_shape(h))
+                print(nn.int_shape(h))
                 quit()
 
             # ////////// up pass through pixelCNN ////////

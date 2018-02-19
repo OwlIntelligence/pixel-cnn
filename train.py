@@ -86,7 +86,7 @@ assert len(obs_shape) == 3, 'assumed right now'
 # data place holders
 x_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + obs_shape)
 xs = [tf.placeholder(tf.float32, shape=(args.batch_size, ) + obs_shape) for i in range(args.nr_gpu)]
-gh_init, sh_init = None, None, None, None
+gh_init, sh_init = None, None
 ghs, shs, gh_sample, sh_sample = [[None] * args.nr_gpu for i in range(4)]
 
 if args.global_conditional:

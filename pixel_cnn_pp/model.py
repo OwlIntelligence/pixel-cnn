@@ -29,7 +29,7 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
         else:
             raise('resnet nonlinearity ' + resnet_nonlinearity + ' is not supported')
 
-        with arg_scope([nn.gated_resnet], nonlinearity=resnet_nonlinearity, h=h):
+        with arg_scope([nn.gated_resnet], nonlinearity=resnet_nonlinearity, h=sh):
 
             if conditional is not None and conditional=='spatial':
                 h = nn.latent_deconv_net(h)

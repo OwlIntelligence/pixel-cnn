@@ -327,6 +327,16 @@ def gated_resnet(x, a=None, h=None, nonlinearity=concat_elu, conv=conv2d, init=F
     c3 = a * tf.nn.sigmoid(b)
     return x + c3
 
+@add_arg_scope
+def latent_deconv_net(h, scale_factor=1, nonlinearity=concat_elu, conv=deconv2d, init=False, counters={}, ema=None, dropout_p=0., **kwargs):
+    assert scale_factor in [1,2,4], "factor in [1,2,4]"
+    if scale_factor >= 2:
+        h = conv(h, h.shape[-1], filter_size=(3,3), stride=(2,2), pad='SAME')
+    if scale_factor >= 4:
+        h = conv(h, h.shape[-1], filter_size=(3,3), stride=(2,2), pad='SAME')
+    return h
+
+
 ''' utilities for shifting the image around, efficient alternative to masking convolutions '''
 
 def down_shift(x):

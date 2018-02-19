@@ -37,6 +37,7 @@ parser.add_argument('-m', '--nr_logistic_mix', type=int, default=10, help='Numbe
 parser.add_argument('-z', '--resnet_nonlinearity', type=str, default='concat_elu', help='Which nonlinearity to use in the ResNet layers. One of "concat_elu", "elu", "relu" ')
 parser.add_argument('-c', '--class_conditional', dest='class_conditional', action='store_true', help='Condition generative model on labels?')
 parser.add_argument('-sc', '--spatial_conditional', dest='spatial_conditional', action='store_true', help='Condition on spatial latent codes?')
+parser.add_argument('-gc', '--global_conditional', dest='global_conditional', action='store_true', help='Condition on global latent codes?')
 parser.add_argument('-ed', '--energy_distance', dest='energy_distance', action='store_true', help='use energy distance in place of likelihood')
 # optimization
 parser.add_argument('-l', '--learning_rate', type=float, default=0.001, help='Base learning rate')
@@ -85,32 +86,49 @@ assert len(obs_shape) == 3, 'assumed right now'
 # data place holders
 x_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + obs_shape)
 xs = [tf.placeholder(tf.float32, shape=(args.batch_size, ) + obs_shape) for i in range(args.nr_gpu)]
+gh_init, ghs, sh_init, shs = None, None, None, None
+gh_sample = [None] * args.nr_gpu
+sh_sample = [None] * args.nr_gpu
+if args.global_conditional:
+    latent_dim = num_labels
+    gh_init = [tf.placeholder(tf.int32, shape=(args.init_batch_size, latent_dim)) for i in range(args.nr_gpu)]
+    ghs = [tf.placeholder(tf.int32, shape=(args.batch_size, latent_dim)) for i in range(args.nr_gpu)]
+if args.spatial_conditional:
+    latent_shape = obs_shape ##
+    sh_init = [tf.placeholder(tf.float32, shape=(args.init_batch_size,) + latent_shape ) for i in range(args.nr_gpu)]
+    shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + latent_shape ) for i in range(args.nr_gpu)]
+
+
+
+
 
 # if the model is class-conditional we'll set up label placeholders + one-hot encodings 'h' to condition on
-if args.class_conditional:
-    num_labels = train_data.get_num_labels()
-    y_init = tf.placeholder(tf.int32, shape=(args.init_batch_size,))
-    h_init = tf.one_hot(y_init, num_labels)
-    y_sample = np.split(np.mod(np.arange(args.batch_size*args.nr_gpu), num_labels), args.nr_gpu)
-    h_sample = [tf.one_hot(tf.Variable(y_sample[i], trainable=False), num_labels) for i in range(args.nr_gpu)]
-    ys = [tf.placeholder(tf.int32, shape=(args.batch_size,)) for i in range(args.nr_gpu)]
-    hs = [tf.one_hot(ys[i], num_labels) for i in range(args.nr_gpu)]
-elif args.spatial_conditional:
-    lat_shape = obs_shape
-    hs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + lat_shape ) for i in range(args.nr_gpu)]
-    h_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + obs_shape)
-    h_sample = [None] * args.nr_gpu
-else:
-    h_init = None
-    h_sample = [None] * args.nr_gpu
-    hs = h_sample
+
+# if args.class_conditional:
+#     num_labels = train_data.get_num_labels()
+#     y_init = tf.placeholder(tf.int32, shape=(args.init_batch_size,))
+#     h_init = tf.one_hot(y_init, num_labels)
+#     y_sample = np.split(np.mod(np.arange(args.batch_size*args.nr_gpu), num_labels), args.nr_gpu)
+#     h_sample = [tf.one_hot(tf.Variable(y_sample[i], trainable=False), num_labels) for i in range(args.nr_gpu)]
+#     ys = [tf.placeholder(tf.int32, shape=(args.batch_size,)) for i in range(args.nr_gpu)]
+#     hs = [tf.one_hot(ys[i], num_labels) for i in range(args.nr_gpu)]
+# elif args.spatial_conditional:
+#     lat_shape = obs_shape
+#     hs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + lat_shape ) for i in range(args.nr_gpu)]
+#     h_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + obs_shape)
+#     h_sample = [None] * args.nr_gpu
+# else:
+#     h_init = None
+#     h_sample = [None] * args.nr_gpu
+#     hs = h_sample
+
 
 # create the model
-model_opt = { 'nr_resnet': args.nr_resnet, 'nr_filters': args.nr_filters, 'nr_logistic_mix': args.nr_logistic_mix, 'resnet_nonlinearity': args.resnet_nonlinearity, 'energy_distance': args.energy_distance }
+model_opt = { 'nr_resnet': args.nr_resnet, 'nr_filters': args.nr_filters, 'nr_logistic_mix': args.nr_logistic_mix, 'resnet_nonlinearity': args.resnet_nonlinearity, 'energy_distance': args.energy_distance, 'global_conditional':args.global_conditional, 'spatial_conditional':args.spatial_conditional}
 model = tf.make_template('model', model_spec)
 
 # run once for data dependent initialization of parameters
-init_pass = model(x_init, h_init, init=True, dropout_p=args.dropout_p, **model_opt)
+init_pass = model(x_init, gh_init, sh_init, init=True, dropout_p=args.dropout_p, **model_opt)
 
 # keep track of moving average
 all_params = tf.trainable_variables()
@@ -126,18 +144,18 @@ new_x_gen = []
 for i in range(args.nr_gpu):
     with tf.device('/gpu:%d' % i):
         # train
-        out = model(xs[i], hs[i], ema=None, dropout_p=args.dropout_p, **model_opt)
+        out = model(xs[i], ghs[i], shs[i], ema=None, dropout_p=args.dropout_p, **model_opt)
         loss_gen.append(loss_fun(tf.stop_gradient(xs[i]), out))
 
         # gradients
         grads.append(tf.gradients(loss_gen[i], all_params, colocate_gradients_with_ops=True))
 
         # test
-        out = model(xs[i], hs[i], ema=ema, dropout_p=0., **model_opt)
+        out = model(xs[i], ghs[i], shs[i], ema=ema, dropout_p=0., **model_opt)
         loss_gen_test.append(loss_fun(xs[i], out))
 
         # sample
-        out = model(xs[i], h_sample[i], ema=ema, dropout_p=0, **model_opt)
+        out = model(xs[i], gh_sample[i], sh_sample[i], ema=ema, dropout_p=0, **model_opt)
         if args.energy_distance:
             new_x_gen.append(out[0])
         else:

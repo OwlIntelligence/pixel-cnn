@@ -32,8 +32,7 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
         with arg_scope([nn.gated_resnet], nonlinearity=resnet_nonlinearity, h=sh):
 
             if spatial_conditional:
-                sh = nn.latent_deconv_net(sh)
-                print(sh)
+                sh = nn.latent_deconv_net(sh, scale_factor=4)
                 print(nn.int_shape(sh))
                 quit()
 

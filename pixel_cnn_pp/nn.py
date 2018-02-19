@@ -296,7 +296,7 @@ def nin(x, num_units, **kwargs):
 ''' meta-layer consisting of multiple base layers '''
 
 @add_arg_scope
-def gated_resnet(x, a=None, h=None, nonlinearity=concat_elu, conv=conv2d, init=False, counters={}, ema=None, dropout_p=0., **kwargs):
+def gated_resnet(x, a=None, gh=None, sh=None, nonlinearity=concat_elu, conv=conv2d, init=False, counters={}, ema=None, dropout_p=0., **kwargs):
     xs = int_shape(x)
     print(xs)
     num_filters = xs[-1]
@@ -311,17 +311,15 @@ def gated_resnet(x, a=None, h=None, nonlinearity=concat_elu, conv=conv2d, init=F
     c2 = conv(c1, num_filters * 2, init_scale=0.1)
 
     # add projection of h vector if included: conditional generation
-    if h is not None:
-        hs = int_shape(x)
-        if len(hs) > 2:
-            c2 += conv2d_1x1(nonlinearity(h), 2 * num_filters, init=init)
-        else:
-            with tf.variable_scope(get_name('conditional_weights', counters)):
-                hw = get_var_maybe_avg('hw', ema, shape=[int_shape(h)[-1], 2 * num_filters], dtype=tf.float32,
-                                        initializer=tf.random_normal_initializer(0, 0.05), trainable=True)
-            if init:
-                hw = hw.initialized_value()
-            c2 += tf.reshape(tf.matmul(h, hw), [xs[0], 1, 1, 2 * num_filters])
+    if sh is not None:
+        c2 += conv2d_1x1(nonlinearity(sh), 2 * num_filters, init=init)
+    if gh is not None:
+        with tf.variable_scope(get_name('conditional_weights', counters)):
+            hw = get_var_maybe_avg('hw', ema, shape=[int_shape(gh)[-1], 2 * num_filters], dtype=tf.float32,
+                                    initializer=tf.random_normal_initializer(0, 0.05), trainable=True)
+        if init:
+            hw = hw.initialized_value()
+        c2 += tf.reshape(tf.matmul(gh, hw), [xs[0], 1, 1, 2 * num_filters])
 
     a, b = tf.split(c2, 2, 3)
     c3 = a * tf.nn.sigmoid(b)

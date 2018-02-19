@@ -29,12 +29,10 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
         else:
             raise('resnet nonlinearity ' + resnet_nonlinearity + ' is not supported')
 
-        with arg_scope([nn.gated_resnet], nonlinearity=resnet_nonlinearity, h=sh):
+        if spatial_conditional:
+            sh = nn.latent_deconv_net(sh, scale_factor=1)
 
-            if spatial_conditional:
-                sh = nn.latent_deconv_net(sh, scale_factor=4)
-                print(nn.int_shape(sh))
-                quit()
+        with arg_scope([nn.gated_resnet], nonlinearity=resnet_nonlinearity, gh=gh, sh=sh):
 
             # ////////// up pass through pixelCNN ////////
             xs = nn.int_shape(x)

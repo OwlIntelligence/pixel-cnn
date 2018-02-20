@@ -102,7 +102,6 @@ if args.spatial_conditional:
 
 
 
-
 # if the model is class-conditional we'll set up label placeholders + one-hot encodings 'h' to condition on
 
 # if args.class_conditional:
@@ -182,8 +181,10 @@ def sample_from_model(sess, data=None):
     if data is not None and type(data) is not tuple:
         x = data
     x = np.split(x, args.nr_gpu)
-    feed_dict = {sh_sample[i]: x[i] for i in range(args.nr_gpu)}
-
+    h = [x[i] for i in range(args.nr_gpu)]
+    for i in range(args.nr_gpu):
+        h[i][:, :, :16, :] = 0
+    feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
     x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
     for yi in range(obs_shape[0]):
         for xi in range(obs_shape[1]):

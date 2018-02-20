@@ -15,6 +15,10 @@ def config_args(args, config):
         args.init_batch_size = config["init_batch_size"]
     if "spatial_conditional" in config:
         args.spatial_conditional = config['spatial_conditional']
+    if "global_conditional" in config:
+        args.global_conditional = config['global_conditional']
+    if "save_interval" in config:
+        args.save_interval = config['save_interval']
 
 
 
@@ -29,4 +33,5 @@ configs['cifar'] = {
     "batch_size": 8,
     "init_batch_size": 8,
     "spatial_conditional": True,
+    "save_interval": 5,
 }

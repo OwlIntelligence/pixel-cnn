@@ -213,6 +213,7 @@ def make_feed_dict(data, init=False):
         mx = np.ones_like(x[0])
         mx[:, :x[0].shape[1]//2, :, :] = 0.
         if args.spatial_conditional:
+            print(x[i].shape, mx.shape)
             feed_dict.update({shs[i]: x[i]*mx for i in range(args.nr_gpu)})
     return feed_dict
 

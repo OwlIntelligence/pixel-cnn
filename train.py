@@ -182,9 +182,9 @@ def sample_from_model(sess, data=None):
         x = data
     x = np.cast[np.float32]((x - 127.5) / 127.5)
     x = np.split(x, args.nr_gpu)
-    h = [x[i] for i in range(args.nr_gpu)]
+    h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
-        h[i][:, :, :16, :] = 0
+        h[i][:, :, 16:, :] = 0
     feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
     x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
     for yi in range(obs_shape[0]):
@@ -212,15 +212,17 @@ def make_feed_dict(data, init=False):
         if gh_init is not None:
             pass #feed_dict.update({gh_init: x})
         if sh_init is not None:
-            x[:, :, :16, :] = 0
-            feed_dict.update({sh_init: x})
+            h = x.copy()
+            h[:, :, 16:, :] = 0
+            feed_dict.update({sh_init: h})
     else:
         x = np.split(x, args.nr_gpu)
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
         if args.spatial_conditional:
+            h = [x[i].copy() for i in range(args.nr_gpu)]
             for i in range(args.nr_gpu):
-                x[i][:, :, :16, :] = 0
-            feed_dict.update({shs[i]: x[i] for i in range(args.nr_gpu)})
+                h[i][:, :, 16:, :] = 0
+            feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
     return feed_dict
 
 # def make_feed_dict(data, init=False):

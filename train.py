@@ -19,7 +19,7 @@ from pixel_cnn_pp import nn
 from pixel_cnn_pp.model import model_spec
 from utils import plotting
 import utils.mask as um
-from utils.mfunc as uf
+import utils.mfunc as uf
 
 # self define modules
 from configs import config_args, configs

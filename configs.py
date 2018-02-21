@@ -33,5 +33,5 @@ configs['cifar'] = {
     "batch_size": 8,
     "init_batch_size": 8,
     "spatial_conditional": True,
-    "save_interval": 5,
+    "save_interval": 2,
 }

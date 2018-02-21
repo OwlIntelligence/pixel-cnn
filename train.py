@@ -18,6 +18,8 @@ import tensorflow as tf
 from pixel_cnn_pp import nn
 from pixel_cnn_pp.model import model_spec
 from utils import plotting
+import utils.mask as um
+from utils.mfunc as uf
 
 # self define modules
 from configs import config_args, configs
@@ -95,6 +97,7 @@ if args.global_conditional:
     ghs = [tf.placeholder(tf.int32, shape=(args.batch_size, latent_dim)) for i in range(args.nr_gpu)]
 if args.spatial_conditional:
     latent_shape = obs_shape ##
+    latent_shape[-1] += 1
     sh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + latent_shape)
     shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + latent_shape ) for i in range(args.nr_gpu)]
     sh_sample = shs
@@ -176,6 +179,9 @@ with tf.device('/gpu:0'):
 bits_per_dim = loss_gen[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch_size)
 bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch_size)
 
+# mask generator
+mgen = um.CenterMaskGenerator(obs_shape[1], obs_shape[2])
+
 # sample from the model
 def sample_from_model(sess, data=None):
     if data is not None and type(data) is not tuple:
@@ -184,7 +190,7 @@ def sample_from_model(sess, data=None):
     x = np.split(x, args.nr_gpu)
     h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
-        h[i][:, :, 16:, :] = 0
+        h[i] = mf.mask_inputs(h[i], mgen)
     feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
     x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
     for yi in range(obs_shape[0]):
@@ -213,7 +219,6 @@ def make_feed_dict(data, init=False):
             pass #feed_dict.update({gh_init: x})
         if sh_init is not None:
             h = x.copy()
-            h[:, :, 16:, :] = 0
             feed_dict.update({sh_init: h})
     else:
         x = np.split(x, args.nr_gpu)
@@ -221,7 +226,7 @@ def make_feed_dict(data, init=False):
         if args.spatial_conditional:
             h = [x[i].copy() for i in range(args.nr_gpu)]
             for i in range(args.nr_gpu):
-                h[i][:, :, 16:, :] = 0
+                h[i] = mf.mask_inputs(h[i], mgen)
             feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
     return feed_dict
 

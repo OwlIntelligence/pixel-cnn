@@ -101,7 +101,6 @@ if args.spatial_conditional:
 
 
 
-
 # if the model is class-conditional we'll set up label placeholders + one-hot encodings 'h' to condition on
 
 # if args.class_conditional:
@@ -180,6 +179,7 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 def sample_from_model(sess, data=None):
     if data is not None and type(data) is not tuple:
         x = data
+    x = np.cast[np.float32]((x - 127.5) / 127.5)
     x = np.split(x, args.nr_gpu)
     h = [x[i] for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):

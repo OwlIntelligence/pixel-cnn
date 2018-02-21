@@ -44,7 +44,7 @@ def energy_distance(x, x_sample):
 
     return 2.*l1 - l2
 
-def discretized_mix_logistic_loss(x,l,sum_all=True):
+def discretized_mix_logistic_loss(x,l,sum_all=True, masks=None):
     """ log-likelihood for mixture of discretized logistics, assumes the data has been rescaled to [-1,1] interval """
     xs = int_shape(x) # true image (i.e. labels) to regress to, e.g. (B,32,32,3)
     ls = int_shape(l) # predicted distribution, e.g. (B,32,32,100)
@@ -83,8 +83,9 @@ def discretized_mix_logistic_loss(x,l,sum_all=True):
 
     log_probs = tf.reduce_sum(log_probs,3) + log_prob_from_logits(logit_probs)
     lse = log_sum_exp(log_probs)
-    mgen = um.CenterMaskGenerator(32, 32)
-    lse *= (1-mgen.gen(lse.shape[0]))
+    if masks is not None:
+        assert lse.shape==masks.shape, "shape of masks does not match the log_sum_exp outputs"
+        lse *= (1 - masks)
     if sum_all:
         return -tf.reduce_sum(lse)
     else:

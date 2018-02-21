@@ -147,14 +147,14 @@ for i in range(args.nr_gpu):
     with tf.device('/gpu:%d' % i):
         # train
         out = model(xs[i], ghs[i], shs[i], ema=None, dropout_p=args.dropout_p, **model_opt)
-        loss_gen.append(loss_fun(tf.stop_gradient(xs[i]), out))
+        loss_gen.append(loss_fun(tf.stop_gradient(xs[i]), out, masks=shs[i][:, :, :, -1]))
 
         # gradients
         grads.append(tf.gradients(loss_gen[i], all_params, colocate_gradients_with_ops=True))
 
         # test
         out = model(xs[i], ghs[i], shs[i], ema=ema, dropout_p=0., **model_opt)
-        loss_gen_test.append(loss_fun(xs[i], out))
+        loss_gen_test.append(loss_fun(xs[i], out, masks=shs[i][:, :, :, -1]))
 
         # sample
         out = model(xs[i], gh_sample[i], sh_sample[i], ema=ema, dropout_p=0, **model_opt)
@@ -307,7 +307,7 @@ with tf.Session() as sess:
             # generate samples from the model
             sample_x = []
             for i in range(args.num_samples):
-                sample_x.append(sample_from_model(sess, data=next(test_data)))
+                sample_x.append(sample_from_model(sess, data=next(train_data))) ##
             sample_x = np.concatenate(sample_x,axis=0)
             img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
             img = plotting.plot_img(img_tile, title=args.data_set + ' samples')

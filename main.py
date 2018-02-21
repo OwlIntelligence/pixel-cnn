@@ -270,29 +270,29 @@ with tf.Session() as sess:
                 sess.run(init_pass, feed_dict)
             print('starting training')
 
-        # train for one epoch
-        train_losses = []
-        for d in train_data:
-            feed_dict = make_feed_dict(d)
-            # forward/backward/update model on each gpu
-            lr *= args.lr_decay
-            feed_dict.update({ tf_lr: lr })
-            l,_ = sess.run([bits_per_dim, optimizer], feed_dict)
-            train_losses.append(l)
-        train_loss_gen = np.mean(train_losses)
-
-        # compute likelihood over test data
-        test_losses = []
-        for d in test_data:
-            feed_dict = make_feed_dict(d)
-            l = sess.run(bits_per_dim_test, feed_dict)
-            test_losses.append(l)
-        test_loss_gen = np.mean(test_losses)
-        test_bpd.append(test_loss_gen)
-
-        # log progress to console
-        print("Iteration %d, time = %ds, train bits_per_dim = %.4f, test bits_per_dim = %.4f" % (epoch, time.time()-begin, train_loss_gen, test_loss_gen))
-        sys.stdout.flush()
+        # # train for one epoch
+        # train_losses = []
+        # for d in train_data:
+        #     feed_dict = make_feed_dict(d)
+        #     # forward/backward/update model on each gpu
+        #     lr *= args.lr_decay
+        #     feed_dict.update({ tf_lr: lr })
+        #     l,_ = sess.run([bits_per_dim, optimizer], feed_dict)
+        #     train_losses.append(l)
+        # train_loss_gen = np.mean(train_losses)
+        #
+        # # compute likelihood over test data
+        # test_losses = []
+        # for d in test_data:
+        #     feed_dict = make_feed_dict(d)
+        #     l = sess.run(bits_per_dim_test, feed_dict)
+        #     test_losses.append(l)
+        # test_loss_gen = np.mean(test_losses)
+        # test_bpd.append(test_loss_gen)
+        #
+        # # log progress to console
+        # print("Iteration %d, time = %ds, train bits_per_dim = %.4f, test bits_per_dim = %.4f" % (epoch, time.time()-begin, train_loss_gen, test_loss_gen))
+        # sys.stdout.flush()
 
         if epoch % args.save_interval == 0:
 
@@ -300,8 +300,8 @@ with tf.Session() as sess:
             sample_x = []
             for i in range(args.num_samples):
                 sample_x.append(sample_from_model(sess, data=next(train_data)))
-            print(sample_x*127.5+127.5)
             sample_x = np.concatenate(sample_x,axis=0)
+            print(sample_x*127.5+127.5)
             img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
             img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
             plotting.plt.savefig(os.path.join(args.save_dir,'%s_sample%d.png' % (args.data_set, epoch)))

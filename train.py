@@ -194,7 +194,7 @@ def sample_from_model(sess, data=None, masks=None):
     #x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
     x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
     m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
-    assert m_gen[0]==m_gen[-1], "we currently assume all masks are the same during sampling"
+    #assert m_gen[0]==m_gen[-1], "we currently assume all masks are the same during sampling"
     m_gen = m_gen[0]
     for yi in range(obs_shape[0]):
         for xi in range(obs_shape[1]):

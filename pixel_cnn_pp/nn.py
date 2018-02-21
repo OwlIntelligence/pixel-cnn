@@ -84,7 +84,7 @@ def discretized_mix_logistic_loss(x,l,sum_all=True):
     log_probs = tf.reduce_sum(log_probs,3) + log_prob_from_logits(logit_probs)
     lse = log_sum_exp(log_probs)
     mgen = um.CenterMaskGenerator(32, 32)
-    lse *= mgen.gen(lse.shape[0])
+    lse *= (1-mgen.gen(lse.shape[0]))
     if sum_all:
         return -tf.reduce_sum(lse)
     else:

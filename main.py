@@ -300,7 +300,7 @@ with tf.Session() as sess:
             sample_x = []
             for i in range(args.num_samples):
                 sample_x.append(sample_from_model(sess, data=next(train_data)))
-            print(sample_x)
+            print(sample_x*127.5+127.5)
             sample_x = np.concatenate(sample_x,axis=0)
             img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
             img = plotting.plot_img(img_tile, title=args.data_set + ' samples')

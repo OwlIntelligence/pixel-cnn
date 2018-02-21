@@ -81,10 +81,15 @@ def discretized_mix_logistic_loss(x,l,sum_all=True):
     log_probs = tf.where(x < -0.999, log_cdf_plus, tf.where(x > 0.999, log_one_minus_cdf_min, tf.where(cdf_delta > 1e-5, tf.log(tf.maximum(cdf_delta, 1e-12)), log_pdf_mid - np.log(127.5))))
 
     log_probs = tf.reduce_sum(log_probs,3) + log_prob_from_logits(logit_probs)
+    lse = log_sum_exp(log_probs)
+    print(lse.shape)
     if sum_all:
-        return -tf.reduce_sum(log_sum_exp(log_probs))
+        return -tf.reduce_sum(lse)
     else:
-        return -tf.reduce_sum(log_sum_exp(log_probs),[1,2])
+        return -tf.reduce_sum(lse,[1,2])
+
+
+
 
 def sample_from_discretized_mix_logistic(l,nr_mix):
     ls = int_shape(l)
@@ -308,7 +313,7 @@ def gated_resnet(x, a=None, gh=None, sh=None, nonlinearity=concat_elu, conv=conv
     c2 = conv(c1, num_filters * 2, init_scale=0.1)
 
     # add projection of h vector if included: conditional generation
-    if sh is not None: 
+    if sh is not None:
         c2 += conv2d_1x1(nonlinearity(sh), 2 * num_filters, init=init)
     if gh is not None: # haven't finished this part
         with tf.variable_scope(get_name('conditional_weights', counters)):

@@ -1,5 +1,5 @@
 import numpy as np
-from mask import *
+from utils.mask import *
 
 def mask_inputs(inputs, mgen):
     batch_size, height, width, num_channel = inputs.shape
@@ -8,4 +8,3 @@ def mask_inputs(inputs, mgen):
     for c in range(num_channel):
         inputs[:, :, :, c] *= masks
     return inputs
-    

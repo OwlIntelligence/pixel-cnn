@@ -27,11 +27,11 @@ configs = {}
 configs['cifar'] = {
     "data_dir": "/data/ziz/not-backed-up/jxu/cifar",
     "save_dir": "/data/ziz/jxu/models/cifar-test",
-    "nr_filters": 50,
-    "nr_resnet": 3,
+    "nr_filters": 160,
+    "nr_resnet": 5,
     "data_set": "cifar",
     "batch_size": 8,
     "init_batch_size": 8,
     "spatial_conditional": True,
-    "save_interval": 3,
+    "save_interval": 10,
 }

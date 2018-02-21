@@ -5,6 +5,7 @@ Various tensorflow utilities
 import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.framework.python.ops import add_arg_scope
+import utils.mask as um
 
 def int_shape(x):
     return list(map(int, x.get_shape()))
@@ -82,7 +83,8 @@ def discretized_mix_logistic_loss(x,l,sum_all=True):
 
     log_probs = tf.reduce_sum(log_probs,3) + log_prob_from_logits(logit_probs)
     lse = log_sum_exp(log_probs)
-    print(lse.shape)
+    mgen = um.CenterMaskGenerator()
+    lse *= mgen.gen(lse.shape[0])
     if sum_all:
         return -tf.reduce_sum(lse)
     else:

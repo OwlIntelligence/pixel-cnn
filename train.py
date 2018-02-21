@@ -189,7 +189,7 @@ def sample_from_model(sess, data=None):
     x = np.split(x, args.nr_gpu)
     h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
-        h[i] = mf.mask_inputs(h[i], mgen)
+        h[i] = uf.mask_inputs(h[i], mgen)
     feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
     x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
     for yi in range(obs_shape[0]):
@@ -226,7 +226,7 @@ def make_feed_dict(data, init=False):
         if args.spatial_conditional:
             h = [x[i].copy() for i in range(args.nr_gpu)]
             for i in range(args.nr_gpu):
-                h[i] = mf.mask_inputs(h[i], mgen)
+                h[i] = uf.mask_inputs(h[i], mgen)
             feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
     return feed_dict
 

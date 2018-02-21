@@ -218,6 +218,7 @@ def make_feed_dict(data, init=False):
             pass #feed_dict.update({gh_init: x})
         if sh_init is not None:
             h = x.copy()
+            h = mf.mask_inputs(h, mgen)
             feed_dict.update({sh_init: h})
     else:
         x = np.split(x, args.nr_gpu)

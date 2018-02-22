@@ -39,7 +39,7 @@ configs['cifar'] = {
     "map_sampling": True,
 }
 
-configs['celeba'] = {
+configs['celeba64'] = {
     "data_dir": "/data/ziz/not-backed-up/jxu/CelebA",
     "save_dir": "/data/ziz/jxu/models/celeba-test",
     "nr_filters": 200,

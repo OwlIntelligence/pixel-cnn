@@ -42,8 +42,8 @@ configs['cifar'] = {
 configs['celeba64'] = {
     "data_dir": "/data/ziz/not-backed-up/jxu/CelebA",
     "save_dir": "/data/ziz/jxu/models/celeba-test",
-    "nr_filters": 200,
-    "nr_resnet": 6,
+    "nr_filters": 120,
+    "nr_resnet": 4,
     "data_set": "celeba64",
     "batch_size": 8,
     "init_batch_size": 8,

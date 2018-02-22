@@ -94,7 +94,7 @@ def discretized_mix_logistic_loss(x,l,sum_all=True, masks=None):
 
 
 
-def sample_from_discretized_mix_logistic(l,nr_mix):
+def sample_from_discretized_mix_logistic(l,nr_mix, epsilon=1e-5):
     ls = int_shape(l)
     xs = ls[:-1] + [3]
     # unpack parameters
@@ -109,12 +109,13 @@ def sample_from_discretized_mix_logistic(l,nr_mix):
     coeffs = tf.reduce_sum(tf.nn.tanh(l[:,:,:,:,2*nr_mix:3*nr_mix])*sel,4)
     # sample from logistic & clip to interval
     # we don't actually round to the nearest 8bit value when sampling
-    u = tf.random_uniform(means.get_shape(), minval=1e-5, maxval=1. - 1e-5)
+    u = tf.random_uniform(means.get_shape(), minval=epsilon, maxval=1. - epsilon)
     x = means + tf.exp(log_scales)*(tf.log(u) - tf.log(1. - u))
     x0 = tf.minimum(tf.maximum(x[:,:,:,0], -1.), 1.)
     x1 = tf.minimum(tf.maximum(x[:,:,:,1] + coeffs[:,:,:,0]*x0, -1.), 1.)
     x2 = tf.minimum(tf.maximum(x[:,:,:,2] + coeffs[:,:,:,1]*x0 + coeffs[:,:,:,2]*x1, -1.), 1.)
     return tf.concat([tf.reshape(x0,xs[:-1]+[1]), tf.reshape(x1,xs[:-1]+[1]), tf.reshape(x2,xs[:-1]+[1])],3)
+
 
 def get_var_maybe_avg(var_name, ema, **kwargs):
     ''' utility for retrieving polyak averaged params '''

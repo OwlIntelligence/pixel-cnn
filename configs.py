@@ -19,6 +19,8 @@ def config_args(args, config):
         args.global_conditional = config['global_conditional']
     if "save_interval" in config:
         args.save_interval = config['save_interval']
+    if "map_sampling" in config:
+        args.map_sampling = config['map_sampling']
 
 
 
@@ -34,4 +36,5 @@ configs['cifar'] = {
     "init_batch_size": 8,
     "spatial_conditional": True,
     "save_interval": 10,
+    "map_sampling": True,
 }

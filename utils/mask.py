@@ -45,3 +45,29 @@ class RandomRectangleMaskGenerator(MaskGenerator):
             width_offset = rng.randint(low=margin_width, high=self.width-margin_width-c_width)
             self.masks[i, height_offset:height_offset+c_height, width_offset:width_offset+c_width] = 0
         return self.masks
+
+# class RandomShapeMaskGenerator(MaskGenerator):
+#
+#     def __init__(self, height, width):
+#         super().__init__(height, width)
+#
+#     def _gen_rec_range(self, n, min_ratio=0.25, max_ratio=0.75, margin_ratio=0.):
+#         recs = np.ones((n, self.height, self.width))
+#         for i in range(recs.shape[0]):
+#             min_height = int(self.height * min_ratio)
+#             min_width = int(self.width * min_ratio)
+#             max_height = int(self.height * max_ratio)
+#             max_width = int(self.width * max_ratio)
+#             margin_height = int(self.height * margin_ratio)
+#             margin_width = int(self.width * margin_ratio)
+#             rng = np.random.RandomState(None)
+#             c_height = rng.randint(low=min_height, high=max_height)
+#             c_width = rng.randint(low=min_width, high=max_width)
+#             height_offset = rng.randint(low=margin_height, high=self.height-margin_height-c_height)
+#             width_offset = rng.randint(low=margin_width, high=self.width-margin_width-c_width)
+#             recs[i, height_offset:height_offset+c_height, width_offset:width_offset+c_width] = 0
+#         recs =
+#
+#
+#     def gen(self, n):
+#         pass

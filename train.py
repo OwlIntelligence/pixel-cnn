@@ -179,7 +179,8 @@ bits_per_dim = loss_gen[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch
 bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch_size)
 
 # mask generator
-mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
+train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
+test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
 
 # sample from the model
 def sample_from_model(sess, data=None, masks=None):
@@ -189,7 +190,7 @@ def sample_from_model(sess, data=None, masks=None):
     x = np.split(x, args.nr_gpu)
     h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
-        h[i] = uf.mask_inputs(h[i], mgen)
+        h[i] = uf.mask_inputs(h[i], test_mgen)
     feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
     #x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
     x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
@@ -223,7 +224,7 @@ def make_feed_dict(data, init=False):
             pass #feed_dict.update({gh_init: x})
         if sh_init is not None:
             h = x.copy()
-            h = uf.mask_inputs(h, mgen)
+            h = uf.mask_inputs(h, train_mgen)
             feed_dict.update({sh_init: h})
     else:
         x = np.split(x, args.nr_gpu)
@@ -231,7 +232,7 @@ def make_feed_dict(data, init=False):
         if args.spatial_conditional:
             h = [x[i].copy() for i in range(args.nr_gpu)]
             for i in range(args.nr_gpu):
-                h[i] = uf.mask_inputs(h[i], mgen)
+                h[i] = uf.mask_inputs(h[i], train_mgen)
             feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
     return feed_dict
 

@@ -38,3 +38,16 @@ configs['cifar'] = {
     "save_interval": 10,
     "map_sampling": True,
 }
+
+configs['celeba'] = {
+    "data_dir": "/data/ziz/not-backed-up/jxu/CelebA",
+    "save_dir": "/data/ziz/jxu/models/celeba-test",
+    "nr_filters": 200,
+    "nr_resnet": 6,
+    "data_set": "celeba64",
+    "batch_size": 8,
+    "init_batch_size": 8,
+    "spatial_conditional": True,
+    "save_interval": 5,
+    "map_sampling": True,
+}

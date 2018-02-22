@@ -56,7 +56,8 @@ parser.add_argument('-ns', '--num_samples', type=int, default=1, help='How many 
 # reproducibility
 parser.add_argument('-s', '--seed', type=int, default=1, help='Random seed to use')
 args = parser.parse_args()
-config_args(args, configs['cifar'])
+#config_args(args, configs['cifar'])
+config_args(args, configs['celeba64'])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
 
 # -----------------------------------------------------------------------------
@@ -79,6 +80,9 @@ if args.data_set == 'cifar':
 elif args.data_set == 'imagenet':
     import data.imagenet_data as imagenet_data
     DataLoader = imagenet_data.DataLoader
+elif args.data_set == 'celeba64':
+    import data.celeba_data as celeba_data
+    DataLoader = celeba_data.DataLoader
 else:
     raise("unsupported dataset")
 train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)

@@ -44,7 +44,7 @@ class RandomRectangleMaskGenerator(MaskGenerator):
             height_offset = rng.randint(low=margin_height, high=self.height-margin_height-c_height)
             width_offset = rng.randint(low=margin_width, high=self.width-margin_width-c_width)
             self.masks[i, height_offset:height_offset+c_height, width_offset:width_offset+c_width] = 0
-        return self.masks
+        return self.masks 
 
 # class RandomShapeMaskGenerator(MaskGenerator):
 #

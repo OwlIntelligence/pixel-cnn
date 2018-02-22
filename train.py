@@ -163,7 +163,7 @@ for i in range(args.nr_gpu):
             new_x_gen.append(out[0])
         else:
             if args.map_sampling:
-                epsilon = 0.5
+                epsilon = 0.5 - 1e-5
             else:
                 epsilon = 1e-5
             new_x_gen.append(nn.sample_from_discretized_mix_logistic(out, args.nr_logistic_mix, epsilon=epsilon))

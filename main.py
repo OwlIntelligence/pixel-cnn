@@ -18,6 +18,8 @@ import tensorflow as tf
 from pixel_cnn_pp import nn
 from pixel_cnn_pp.model import model_spec
 from utils import plotting
+import utils.mask as um
+import utils.mfunc as uf
 
 # self define modules
 from configs import config_args, configs
@@ -38,6 +40,8 @@ parser.add_argument('-z', '--resnet_nonlinearity', type=str, default='concat_elu
 parser.add_argument('-c', '--class_conditional', dest='class_conditional', action='store_true', help='Condition generative model on labels?')
 parser.add_argument('-sc', '--spatial_conditional', dest='spatial_conditional', action='store_true', help='Condition on spatial latent codes?')
 parser.add_argument('-gc', '--global_conditional', dest='global_conditional', action='store_true', help='Condition on global latent codes?')
+parser.add_argument('-ms', '--map_sampling', dest='map_sampling', action='store_true', help='use MAP sampling?')
+parser.add_argument('-cn', '--config_name', type=str, default='None', help='what is the config name?')
 parser.add_argument('-ed', '--energy_distance', dest='energy_distance', action='store_true', help='use energy distance in place of likelihood')
 # optimization
 parser.add_argument('-l', '--learning_rate', type=float, default=0.001, help='Base learning rate')
@@ -53,8 +57,10 @@ parser.add_argument('-ns', '--num_samples', type=int, default=1, help='How many 
 # reproducibility
 parser.add_argument('-s', '--seed', type=int, default=1, help='Random seed to use')
 args = parser.parse_args()
-config_args(args, configs['cifar'])
+#config_args(args, configs['cifar'])
+config_args(args, configs[args.config_name])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
+exp_label = "celeba64"
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility
@@ -76,11 +82,14 @@ if args.data_set == 'cifar':
 elif args.data_set == 'imagenet':
     import data.imagenet_data as imagenet_data
     DataLoader = imagenet_data.DataLoader
+elif args.data_set == 'celeba64':
+    import data.celeba_data as celeba_data
+    DataLoader = celeba_data.DataLoader
 else:
     raise("unsupported dataset")
-train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
+# train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
 test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional)
-obs_shape = train_data.get_observation_size() # e.g. a tuple (32,32,3)
+obs_shape = test_data.get_observation_size() # e.g. a tuple (32,32,3)
 assert len(obs_shape) == 3, 'assumed right now'
 
 # data place holders
@@ -94,10 +103,11 @@ if args.global_conditional:
     gh_init = tf.placeholder(tf.int32, shape=(args.init_batch_size, latent_dim))
     ghs = [tf.placeholder(tf.int32, shape=(args.batch_size, latent_dim)) for i in range(args.nr_gpu)]
 if args.spatial_conditional:
-    latent_shape = obs_shape ##
+    latent_shape = obs_shape[0], obs_shape[1], obs_shape[2]+1 ##
     sh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + latent_shape)
     shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + latent_shape ) for i in range(args.nr_gpu)]
     sh_sample = shs
+
 
 
 
@@ -144,21 +154,25 @@ for i in range(args.nr_gpu):
     with tf.device('/gpu:%d' % i):
         # train
         out = model(xs[i], ghs[i], shs[i], ema=None, dropout_p=args.dropout_p, **model_opt)
-        loss_gen.append(loss_fun(tf.stop_gradient(xs[i]), out))
+        loss_gen.append(loss_fun(tf.stop_gradient(xs[i]), out, masks=shs[i][:, :, :, -1]))
 
         # gradients
         grads.append(tf.gradients(loss_gen[i], all_params, colocate_gradients_with_ops=True))
 
         # test
         out = model(xs[i], ghs[i], shs[i], ema=ema, dropout_p=0., **model_opt)
-        loss_gen_test.append(loss_fun(xs[i], out))
+        loss_gen_test.append(loss_fun(xs[i], out, masks=shs[i][:, :, :, -1]))
 
         # sample
         out = model(xs[i], gh_sample[i], sh_sample[i], ema=ema, dropout_p=0, **model_opt)
         if args.energy_distance:
             new_x_gen.append(out[0])
         else:
-            new_x_gen.append(nn.sample_from_discretized_mix_logistic(out, args.nr_logistic_mix))
+            if args.map_sampling:
+                epsilon = 0.5 - 1e-5
+            else:
+                epsilon = 1e-5
+            new_x_gen.append(nn.sample_from_discretized_mix_logistic(out, args.nr_logistic_mix, epsilon=epsilon))
 
 # add losses and gradients together and get training updates
 tf_lr = tf.placeholder(tf.float32, shape=[])
@@ -175,23 +189,33 @@ with tf.device('/gpu:0'):
 bits_per_dim = loss_gen[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch_size)
 bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch_size)
 
+# mask generator
+train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
+test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
+
 # sample from the model
 def sample_from_model(sess, data=None):
     if data is not None and type(data) is not tuple:
         x = data
     x = np.cast[np.float32]((x - 127.5) / 127.5)
     x = np.split(x, args.nr_gpu)
-    h = [x[i] for i in range(args.nr_gpu)]
+    h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
-        h[i][:, :, :16, :] = 0
+        h[i] = uf.mask_inputs(h[i], test_mgen)
     feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
-    x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
+    #x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
+    x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
+    m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
+    #assert m_gen[0]==m_gen[-1], "we currently assume all masks are the same during sampling"
+    m_gen = m_gen[0][0]
     for yi in range(obs_shape[0]):
         for xi in range(obs_shape[1]):
-            feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
-            new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
-            for i in range(args.nr_gpu):
-                x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
+            if m_gen[yi,xi] == 0:
+                print((yi, xi))
+                feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
+                new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
+                for i in range(args.nr_gpu):
+                    x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
     return np.concatenate(x_gen, axis=0)
 
 # init & save
@@ -211,15 +235,17 @@ def make_feed_dict(data, init=False):
         if gh_init is not None:
             pass #feed_dict.update({gh_init: x})
         if sh_init is not None:
-            x[:, :, :16, :] = 0
-            feed_dict.update({sh_init: x})
+            h = x.copy()
+            h = uf.mask_inputs(h, train_mgen)
+            feed_dict.update({sh_init: h})
     else:
         x = np.split(x, args.nr_gpu)
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
         if args.spatial_conditional:
+            h = [x[i].copy() for i in range(args.nr_gpu)]
             for i in range(args.nr_gpu):
-                x[i][:, :, :16, :] = 0
-            feed_dict.update({shs[i]: x[i] for i in range(args.nr_gpu)})
+                h[i] = uf.mask_inputs(h[i], train_mgen)
+            feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
     return feed_dict
 
 # def make_feed_dict(data, init=False):
@@ -253,61 +279,18 @@ if not os.path.exists(args.save_dir):
 test_bpd = []
 lr = args.learning_rate
 with tf.Session() as sess:
-    for epoch in range(args.max_epochs):
-        begin = time.time()
 
-        # init
-        if epoch == 0:
-            train_data.reset()  # rewind the iterator back to 0 to do one full epoch
-            if args.load_params:
-                ckpt_file = args.save_dir + '/params_' + args.data_set + '.ckpt'
-                print('restoring parameters from', ckpt_file)
-                saver.restore(sess, ckpt_file)
-            else:
-                print('initializing the model...')
-                sess.run(initializer)
-                feed_dict = make_feed_dict(train_data.next(args.init_batch_size), init=True)  # manually retrieve exactly init_batch_size examples
-                sess.run(init_pass, feed_dict)
-            print('starting training')
+    ckpt_file = args.save_dir + '/params_' + args.data_set + '.ckpt'
+    print('restoring parameters from', ckpt_file)
+    saver.restore(sess, ckpt_file)
 
-        # # train for one epoch
-        # train_losses = []
-        # for d in train_data:
-        #     feed_dict = make_feed_dict(d)
-        #     # forward/backward/update model on each gpu
-        #     lr *= args.lr_decay
-        #     feed_dict.update({ tf_lr: lr })
-        #     l,_ = sess.run([bits_per_dim, optimizer], feed_dict)
-        #     train_losses.append(l)
-        # train_loss_gen = np.mean(train_losses)
-        #
-        # # compute likelihood over test data
-        # test_losses = []
-        # for d in test_data:
-        #     feed_dict = make_feed_dict(d)
-        #     l = sess.run(bits_per_dim_test, feed_dict)
-        #     test_losses.append(l)
-        # test_loss_gen = np.mean(test_losses)
-        # test_bpd.append(test_loss_gen)
-        #
-        # # log progress to console
-        # print("Iteration %d, time = %ds, train bits_per_dim = %.4f, test bits_per_dim = %.4f" % (epoch, time.time()-begin, train_loss_gen, test_loss_gen))
-        # sys.stdout.flush()
-
-        if epoch % args.save_interval == 0:
-
-            # generate samples from the model
-            sample_x = []
-            for i in range(args.num_samples):
-                sample_x.append(sample_from_model(sess, data=next(train_data)))
-            sample_x = np.concatenate(sample_x,axis=0)
-            #print(sample_x*127.5+127.5)
-            img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
-            img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
-            plotting.plt.savefig(os.path.join(args.save_dir,'%s_sample%d.png' % (args.data_set, epoch)))
-            plotting.plt.close('all')
-            np.savez(os.path.join(args.save_dir,'%s_sample%d.npz' % (args.data_set, epoch)), sample_x)
-
-            # save params
-            saver.save(sess, args.save_dir + '/params_' + args.data_set + '.ckpt')
-            np.savez(args.save_dir + '/test_bpd_' + args.data_set + '.npz', test_bpd=np.array(test_bpd))
+    # generate samples from the model
+    sample_x = []
+    for i in range(args.num_samples):
+        sample_x.append(sample_from_model(sess, data=next(test_data))) ##
+    sample_x = np.concatenate(sample_x,axis=0)
+    img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
+    img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
+    plotting.plt.savefig(os.path.join(args.save_dir,'%s_complete%d.png' % (args.data_set, exp_label)))
+    plotting.plt.close('all')
+    np.savez(os.path.join(args.save_dir,'%s_complete%d.npz' % (args.data_set, exp_label)), sample_x)

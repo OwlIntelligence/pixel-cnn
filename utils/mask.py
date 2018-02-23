@@ -24,6 +24,19 @@ class CenterMaskGenerator(MaskGenerator):
         self.masks[:, height_offset:height_offset+c_height, width_offset:width_offset+c_width] = 0
         return self.masks
 
+class RectangleMaskGenerator(MaskGenerator):
+
+    def __init__(self, height, width):
+        super().__init__(height, width)
+
+    def gen(self, n, rec=None):
+        if rec is None:
+            rec = int(0.25*self.height), int(0.75*self.width), int(0.75*self.height), int(0.25*self.width)
+        top, right, bottom, left = rec
+        self.masks = np.ones((n, self.height, self.width))
+        self.masks[:, top:bottom, left:right] = 0
+        return self.masks
+
 class RandomRectangleMaskGenerator(MaskGenerator):
 
     def __init__(self, height, width):
@@ -44,7 +57,7 @@ class RandomRectangleMaskGenerator(MaskGenerator):
             height_offset = rng.randint(low=margin_height, high=self.height-margin_height-c_height)
             width_offset = rng.randint(low=margin_width, high=self.width-margin_width-c_width)
             self.masks[i, height_offset:height_offset+c_height, width_offset:width_offset+c_width] = 0
-        return self.masks 
+        return self.masks
 
 # class RandomShapeMaskGenerator(MaskGenerator):
 #

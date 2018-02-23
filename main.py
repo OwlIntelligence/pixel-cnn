@@ -192,6 +192,7 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 # mask generator
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
 test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
+#test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (28, 62, 38, 2))
 
 # sample from the model
 def sample_from_model(sess, data=None):
@@ -274,6 +275,8 @@ def make_feed_dict(data, init=False):
 #     return feed_dict
 
 # //////////// perform training //////////////
+_ = next(test_data)
+
 if not os.path.exists(args.save_dir):
     os.makedirs(args.save_dir)
 test_bpd = []

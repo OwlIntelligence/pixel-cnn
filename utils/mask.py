@@ -26,13 +26,14 @@ class CenterMaskGenerator(MaskGenerator):
 
 class RectangleMaskGenerator(MaskGenerator):
 
-    def __init__(self, height, width):
+    def __init__(self, height, width,  rec=None):
         super().__init__(height, width)
-
-    def gen(self, n, rec=None):
         if rec is None:
             rec = int(0.25*self.height), int(0.75*self.width), int(0.75*self.height), int(0.25*self.width)
-        top, right, bottom, left = rec
+        self.rec = rec
+
+    def gen(self, n):
+        top, right, bottom, left = self.rec
         self.masks = np.ones((n, self.height, self.width))
         self.masks[:, top:bottom, left:right] = 0
         return self.masks

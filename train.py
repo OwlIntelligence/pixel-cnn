@@ -41,6 +41,7 @@ parser.add_argument('-c', '--class_conditional', dest='class_conditional', actio
 parser.add_argument('-sc', '--spatial_conditional', dest='spatial_conditional', action='store_true', help='Condition on spatial latent codes?')
 parser.add_argument('-gc', '--global_conditional', dest='global_conditional', action='store_true', help='Condition on global latent codes?')
 parser.add_argument('-ms', '--map_sampling', dest='map_sampling', action='store_true', help='use MAP sampling?')
+parser.add_argument('-cn', '--config_name', type=str, default='None', help='what is the config name?')
 parser.add_argument('-ed', '--energy_distance', dest='energy_distance', action='store_true', help='use energy distance in place of likelihood')
 # optimization
 parser.add_argument('-l', '--learning_rate', type=float, default=0.001, help='Base learning rate')
@@ -57,7 +58,7 @@ parser.add_argument('-ns', '--num_samples', type=int, default=1, help='How many 
 parser.add_argument('-s', '--seed', type=int, default=1, help='Random seed to use')
 args = parser.parse_args()
 #config_args(args, configs['cifar'])
-config_args(args, configs['celeba64'])
+config_args(args, configs[args.config_name])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
 
 # -----------------------------------------------------------------------------

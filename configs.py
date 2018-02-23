@@ -49,5 +49,5 @@ configs['celeba64'] = {
     "init_batch_size": 8,
     "spatial_conditional": True,
     "save_interval": 5,
-    "map_sampling": True,
+    "map_sampling": False,
 }

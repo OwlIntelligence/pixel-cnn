@@ -26,6 +26,19 @@ def config_args(args, config):
 
 configs = {}
 
+configs['imagenet'] = {
+    "data_dir": "/data/ziz/not-backed-up/jxu/imagenet",
+    "save_dir": "/data/ziz/jxu/models/imagenet-test",
+    "nr_filters": 160,
+    "nr_resnet": 5,
+    "data_set": "imagenet",
+    "batch_size": 8,
+    "init_batch_size": 8,
+    "spatial_conditional": True,
+    "save_interval": 10,
+    "map_sampling": True,
+}
+
 configs['cifar'] = {
     "data_dir": "/data/ziz/not-backed-up/jxu/cifar",
     "save_dir": "/data/ziz/jxu/models/cifar-test",

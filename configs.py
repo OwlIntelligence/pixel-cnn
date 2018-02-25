@@ -21,6 +21,8 @@ def config_args(args, config):
         args.save_interval = config['save_interval']
     if "map_sampling" in config:
         args.map_sampling = config['map_sampling']
+    if "nr_gpu" in config:
+        args.map_sampling = config['nr_gpu']
 
 
 

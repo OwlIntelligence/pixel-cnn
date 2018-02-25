@@ -37,6 +37,7 @@ configs['imagenet'] = {
     "spatial_conditional": True,
     "save_interval": 10,
     "map_sampling": True,
+    "nr_gpu": 2,
 }
 
 configs['cifar'] = {
@@ -50,6 +51,7 @@ configs['cifar'] = {
     "spatial_conditional": True,
     "save_interval": 10,
     "map_sampling": True,
+    "nr_gpu": 2,
 }
 
 configs['celeba64'] = {
@@ -63,4 +65,5 @@ configs['celeba64'] = {
     "spatial_conditional": True,
     "save_interval": 5,
     "map_sampling": True,
+    "nr_gpu": 2,
 }

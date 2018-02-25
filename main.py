@@ -7,6 +7,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train_double_cnn.py --nr_gpu 4
 """
 
 import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '6,7'
 import sys
 import json
 import argparse
@@ -283,7 +284,10 @@ if not os.path.exists(args.save_dir):
     os.makedirs(args.save_dir)
 test_bpd = []
 lr = args.learning_rate
-with tf.Session() as sess:
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+with tf.Session(config=config) as sess:
 
     ckpt_file = args.save_dir + '/params_' + args.data_set + '.ckpt'
     print('restoring parameters from', ckpt_file)

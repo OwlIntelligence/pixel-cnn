@@ -192,7 +192,7 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 # mask generator
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
 #test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
-test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (28, 62, 30, 2))
+test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (28, 62, 38, 2))
 
 # sample from the model
 def sample_from_model(sess, data=None):
@@ -296,7 +296,7 @@ with tf.Session() as sess:
     for i in range(sample_x.shape[0]):
         ms = test_mgen.gen(1)[0]
         contour = 1-uf.find_contour(ms)[:, :, None]
-        contour[contour<1] = 0.8
+        contour[contour<1] = 0.5
         sample_x[i] *= contour
 
     img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)

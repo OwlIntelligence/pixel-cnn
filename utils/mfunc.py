@@ -8,3 +8,18 @@ def mask_inputs(inputs, mgen):
     for c in range(num_channel):
         inputs[:, :, :, c] *= masks
     return inputs
+
+def find_contour(mask):
+    contour = np.zeros_like(mask)
+    h, w = mask.shape
+    for y in range(h):
+        for x in range(w):
+            if mask[y, x] > 0:
+                lower_bound = max(y-1, 0)
+                upper_bound = min(y+1, h-1)
+                left_bound = max(x-1, 0)
+                right_bound = min(x+1, w-1)
+                nb = mask[lower_bound:upper_bound+1, left_bound:right_bound+1]
+                if np.min(nb)  == 0:
+                    contour[y, x] = 1
+    return contour

@@ -22,7 +22,7 @@ def config_args(args, config):
     if "map_sampling" in config:
         args.map_sampling = config['map_sampling']
     if "nr_gpu" in config:
-        args.map_sampling = config['nr_gpu']
+        args.nr_gpu = config['nr_gpu']
 
 
 

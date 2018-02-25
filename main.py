@@ -216,6 +216,7 @@ def sample_from_model(sess, data=None):
                 print((yi, xi))
                 feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
                 new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
+                print(new_x_gen_np[0][0,yi,xi,:])
                 for i in range(args.nr_gpu):
                     x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
     return np.concatenate(x_gen, axis=0)

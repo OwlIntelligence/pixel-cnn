@@ -61,7 +61,7 @@ args = parser.parse_args()
 #config_args(args, configs['cifar'])
 config_args(args, configs[args.config_name])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
-exp_label = "celeba64-eye"
+exp_label = "celeba64-center"
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility
@@ -298,6 +298,7 @@ with tf.Session(config=config) as sess:
     for i in range(args.num_samples):
         sample_x.append(sample_from_model(sess, data=next(test_data))) ##
     sample_x = np.concatenate(sample_x,axis=0)
+    np.savez(os.path.join("plots",'%s_complete_%s.npz' % (args.data_set, exp_label)), sample_x)
 
 
     for i in range(sample_x.shape[0]):
@@ -311,4 +312,4 @@ with tf.Session(config=config) as sess:
     img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
     plotting.plt.savefig(os.path.join("plots",'%s_complete_%s.png' % (args.data_set, exp_label)))
     plotting.plt.close('all')
-    np.savez(os.path.join("plots",'%s_complete_%s.npz' % (args.data_set, exp_label)), sample_x)
+    # np.savez(os.path.join("plots",'%s_complete_%s.npz' % (args.data_set, exp_label)), sample_x)

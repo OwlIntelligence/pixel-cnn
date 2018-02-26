@@ -61,7 +61,7 @@ args = parser.parse_args()
 #config_args(args, configs['cifar'])
 config_args(args, configs[args.config_name])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
-exp_label = "celeba64-center"
+exp_label = "celeba64-eye"
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility
@@ -192,8 +192,8 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 
 # mask generator
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
-test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
-#test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (28, 62, 38, 2))
+#test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
+test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (28, 62, 38, 2))
 #test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (54, 52, 64, 12))
 
 # sample from the model
@@ -217,7 +217,6 @@ def sample_from_model(sess, data=None):
                 print((yi, xi))
                 feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
                 new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
-                print(new_x_gen_np[0][0,yi,xi,:])
                 for i in range(args.nr_gpu):
                     x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
     return np.concatenate(x_gen, axis=0)
@@ -300,19 +299,12 @@ with tf.Session(config=config) as sess:
         sample_x.append(sample_from_model(sess, data=next(test_data))) ##
     sample_x = np.concatenate(sample_x,axis=0)
 
-    img = sample_x[0]
-    img = img * 127.5 + 127.5
-    img = np.rint(img).astype(np.uint8)
-    from PIL import Image
-    Image.fromarray(img).save("plots/test.png")
-    quit()
 
     for i in range(sample_x.shape[0]):
         ms = test_mgen.gen(1)[0]
         contour = 1-uf.find_contour(ms)[:, :, None]
-        contour[contour<1] = 0.5
+        contour[contour<1] = 0.0
         sample_x[i] *= contour
-
 
 
     img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)

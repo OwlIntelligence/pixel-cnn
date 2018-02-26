@@ -61,7 +61,7 @@ args = parser.parse_args()
 #config_args(args, configs['cifar'])
 config_args(args, configs[args.config_name])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
-exp_label = "celeba64-eye"
+exp_label = "celeba64-eye-nomap"
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility

@@ -52,8 +52,8 @@ configs['cifar'] = {
     "init_batch_size": 8,
     "spatial_conditional": True,
     "save_interval": 10,
-    "map_sampling": True,
-    "nr_gpu": 2,
+    "map_sampling": False,
+    "nr_gpu": 4,
 }
 
 configs['celeba64'] = {

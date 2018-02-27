@@ -61,7 +61,7 @@ args = parser.parse_args()
 #config_args(args, configs['cifar'])
 config_args(args, configs[args.config_name])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
-exp_label = "celeba64-mouth-e0.3"
+exp_label = "cifar-center-e0.05"
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility
@@ -173,7 +173,7 @@ for i in range(args.nr_gpu):
                 epsilon = 0.5 - 1e-5
             else:
                 epsilon = 1e-5
-            epsilon = 0.3
+            epsilon = 0.05
             new_x_gen.append(nn.sample_from_discretized_mix_logistic(out, args.nr_logistic_mix, epsilon=epsilon))
 
 # add losses and gradients together and get training updates
@@ -193,9 +193,9 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 
 # mask generator
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
-#test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
+test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
 #test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (28, 62, 38, 2))
-test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (54, 52, 64, 12))
+#test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (54, 52, 64, 12))
 
 # sample from the model
 def sample_from_model(sess, data=None):
@@ -290,11 +290,11 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
 
-    data = next(test_data)
-    img_tile = plotting.img_tile(data[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
-    img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
-    plotting.plt.savefig(os.path.join("plots",'%s_gt_%s.png' % (args.data_set, exp_label)))
-    quit()
+    # data = next(test_data)
+    # img_tile = plotting.img_tile(data[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
+    # img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
+    # plotting.plt.savefig(os.path.join("plots",'%s_gt_%s.png' % (args.data_set, exp_label)))
+    # quit()
 
     ckpt_file = args.save_dir + '/params_' + args.data_set + '.ckpt'
     print('restoring parameters from', ckpt_file)

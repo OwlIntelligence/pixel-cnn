@@ -53,7 +53,7 @@ configs['cifar'] = {
     "spatial_conditional": True,
     "save_interval": 10,
     "map_sampling": False,
-    "nr_gpu": 4,
+    "nr_gpu": 2,
 }
 
 configs['celeba64'] = {

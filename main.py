@@ -290,6 +290,12 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
 
+    data = next(test_data)
+    img_tile = plotting.img_tile(data[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
+    img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
+    plotting.plt.savefig(os.path.join("plots",'%s_gt_%s.png' % (args.data_set, exp_label)))
+    quit()
+
     ckpt_file = args.save_dir + '/params_' + args.data_set + '.ckpt'
     print('restoring parameters from', ckpt_file)
     saver.restore(sess, ckpt_file)

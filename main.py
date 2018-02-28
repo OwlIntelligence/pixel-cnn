@@ -306,8 +306,8 @@ with tf.Session(config=config) as sess:
     for i in range(args.num_samples):
         sample_x.append(sample_from_model(sess, data=next(test_data))) ##
     sample_x = np.concatenate(sample_x,axis=0)
+    sample_x = np.rint(sample_x * 127.5 + 127.5).astype(np.uint8)
     np.savez(os.path.join("plots",'%s_complete_%s.npz' % (args.data_set, exp_label)), sample_x)
-
 
     for i in range(sample_x.shape[0]):
         ms = test_mgen.gen(1)[0]
@@ -315,9 +315,14 @@ with tf.Session(config=config) as sess:
         contour[contour<1] = 0.0
         sample_x[i] *= contour
 
+    from PIL import Image
+    img = Image.fromarray(tile_images(sample_x, size=(4,4)), 'RGB')
+    img.save(os.path.join("plots", '%s_complete_%s.png' % (args.data_set, exp_label)))
 
-    img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
-    img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
-    plotting.plt.savefig(os.path.join("plots",'%s_complete_%s.png' % (args.data_set, exp_label)))
-    plotting.plt.close('all')
+    #
+    # img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
+    # img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
+    # plotting.plt.savefig(os.path.join("plots",'%s_complete_%s.png' % (args.data_set, exp_label)))
+    # plotting.plt.close('all')
+
     # np.savez(os.path.join("plots",'%s_complete_%s.npz' % (args.data_set, exp_label)), sample_x)

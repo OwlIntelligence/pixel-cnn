@@ -310,7 +310,7 @@ with tf.Session(config=config) as sess:
     sample_x = np.concatenate(sample_x, axis=0)
     all_data = np.concatenate(all_data, axis=0)
     sample_x = np.rint(sample_x * 127.5 + 127.5)
-    all_data = np.rint(all_data * 127.5 + 127.5)
+    all_data = np.rint(all_data)
     np.savez(os.path.join("plots",'%s_original_%s.npz' % (args.data_set, exp_label)), all_data)
     np.savez(os.path.join("plots",'%s_complete_%s.npz' % (args.data_set, exp_label)), sample_x)
 

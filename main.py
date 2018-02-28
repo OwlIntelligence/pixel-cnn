@@ -193,7 +193,7 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 
 # mask generator
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
-test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], ratio=24./64)
+test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], ratio=2./64)
 #test_mgen = um.CenterEllipseMaskGenerator(obs_shape[0], obs_shape[1])
 #test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (28, 62, 38, 2))
 #test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (54, 52, 64, 12))
@@ -303,10 +303,15 @@ with tf.Session(config=config) as sess:
 
     # generate samples from the model
     sample_x = []
+    all_data = []
     for i in range(args.num_samples):
-        sample_x.append(sample_from_model(sess, data=next(test_data))) ##
-    sample_x = np.concatenate(sample_x,axis=0)
+        all_data.append(next(test_data))
+        sample_x.append(sample_from_model(sess, data=all_data[-1])) ##
+    sample_x = np.concatenate(sample_x, axis=0)
+    all_data = np.concatenate(all_data, axis=0)
     sample_x = np.rint(sample_x * 127.5 + 127.5)
+    all_data = np.rint(all_data * 127.5 + 127.5)
+    np.savez(os.path.join("plots",'%s_original_%s.npz' % (args.data_set, exp_label)), all_data)
     np.savez(os.path.join("plots",'%s_complete_%s.npz' % (args.data_set, exp_label)), sample_x)
 
     for i in range(sample_x.shape[0]):
@@ -316,7 +321,7 @@ with tf.Session(config=config) as sess:
         sample_x[i] *= contour
 
     from PIL import Image
-    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(4,4)), 'RGB')
+    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(10,10)), 'RGB')
     img.save(os.path.join("plots", '%s_complete_%s.png' % (args.data_set, exp_label)))
 
     #

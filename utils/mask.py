@@ -39,6 +39,27 @@ class RectangleMaskGenerator(MaskGenerator):
         self.masks[:, top:bottom, left:right] = 0
         return self.masks
 
+class CenterEllipseMaskGenerator(MaskGenerator):
+
+    def __init__(self, height, width,  a=None, b=None):
+        super().__init__(height, width)
+        if a is None:
+            a = self.height // 4
+        if b is None:
+            b = self.width // 4
+        self.a, self.b = a, b
+
+    def gen(self, n):
+        self.masks = np.ones((n, self.height, self.width))
+        cy, cx = self.height//2, self.width//2
+        for h in range(self.height):
+            for w in range(self.width):
+                if (float(h-cy)/self.a)**2 + (float(w-cx)/self.b)**2 <= 1.:
+                    self.masks[:, h, w] = 0
+        return self.masks
+
+
+
 class RandomRectangleMaskGenerator(MaskGenerator):
 
     def __init__(self, height, width):

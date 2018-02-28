@@ -12,13 +12,14 @@ class MaskGenerator(object):
 
 class CenterMaskGenerator(MaskGenerator):
 
-    def __init__(self, height, width):
+    def __init__(self, height, width, ratio=0.5):
         super().__init__(height, width)
+        self.ratio = ratio
 
-    def gen(self, n, ratio=0.5):
+    def gen(self, n):
         self.masks = np.ones((n, self.height, self.width))
-        c_height = int(self.height * 0.5)
-        c_width = int(self.width * 0.5)
+        c_height = int(self.height * self.ratio)
+        c_width = int(self.width * self.ratio)
         height_offset = (self.height - c_height) // 2
         width_offset = (self.width - c_width) // 2
         self.masks[:, height_offset:height_offset+c_height, width_offset:width_offset+c_width] = 0

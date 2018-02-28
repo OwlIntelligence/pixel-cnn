@@ -61,7 +61,7 @@ args = parser.parse_args()
 #config_args(args, configs['cifar'])
 config_args(args, configs[args.config_name])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
-exp_label = "cifar-center-e0.05"
+exp_label = "celeba64-center"
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility
@@ -193,7 +193,7 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 
 # mask generator
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
-test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
+test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], ratio=24./64)
 #test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (28, 62, 38, 2))
 #test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (54, 52, 64, 12))
 

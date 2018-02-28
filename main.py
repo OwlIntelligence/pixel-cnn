@@ -193,7 +193,7 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 
 # mask generator
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
-test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], ratio=2./64)
+test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], ratio=24./64)
 #test_mgen = um.CenterEllipseMaskGenerator(obs_shape[0], obs_shape[1])
 #test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (28, 62, 38, 2))
 #test_mgen = um.RectangleMaskGenerator(obs_shape[0], obs_shape[1], (54, 52, 64, 12))

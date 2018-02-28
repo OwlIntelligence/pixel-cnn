@@ -314,6 +314,8 @@ with tf.Session(config=config) as sess:
     np.savez(os.path.join("plots",'%s_original_%s.npz' % (args.data_set, exp_label)), all_data)
     np.savez(os.path.join("plots",'%s_complete_%s.npz' % (args.data_set, exp_label)), sample_x)
 
+    print(uf.evaluate(all_data[-100:].astype(np.float64), sample_x[-100:].astype(np.float64)))
+
     for i in range(sample_x.shape[0]):
         ms = test_mgen.gen(1)[0]
         contour = 1-uf.find_contour(ms)[:, :, None]

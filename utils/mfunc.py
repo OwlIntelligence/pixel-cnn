@@ -55,4 +55,6 @@ def batch_psnr(imgs1, imgs2, output_mean=True):
 
 
 def evaluate(original_imgs, completed_imgs):
+    print(original_imgs)
+    print(completed_imgs)
     return batch_psnr(original_imgs, completed_imgs)

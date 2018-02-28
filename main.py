@@ -306,17 +306,17 @@ with tf.Session(config=config) as sess:
     for i in range(args.num_samples):
         sample_x.append(sample_from_model(sess, data=next(test_data))) ##
     sample_x = np.concatenate(sample_x,axis=0)
-    sample_x = np.rint(sample_x * 127.5 + 127.5).astype(np.uint8)
+    sample_x = np.rint(sample_x * 127.5 + 127.5)
     np.savez(os.path.join("plots",'%s_complete_%s.npz' % (args.data_set, exp_label)), sample_x)
 
     for i in range(sample_x.shape[0]):
         ms = test_mgen.gen(1)[0]
         contour = 1-uf.find_contour(ms)[:, :, None]
-        contour[contour<1] = 0.0
+        contour[contour<1] = 0.8
         sample_x[i] *= contour
 
     from PIL import Image
-    img = Image.fromarray(tile_images(sample_x, size=(4,4)), 'RGB')
+    img = Image.fromarray(tile_images(sample_x.astype(np.uint8), size=(4,4)), 'RGB')
     img.save(os.path.join("plots", '%s_complete_%s.png' % (args.data_set, exp_label)))
 
     #

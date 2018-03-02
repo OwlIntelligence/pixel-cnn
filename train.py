@@ -82,13 +82,16 @@ if args.data_set == 'cifar':
 elif args.data_set == 'imagenet':
     import data.imagenet_data as imagenet_data
     DataLoader = imagenet_data.DataLoader
-elif args.data_set == 'celeba64':
+elif 'celeba' in args.data_set:
     import data.celeba_data as celeba_data
     DataLoader = celeba_data.DataLoader
 else:
     raise("unsupported dataset")
 train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
 test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional)
+if args.data_set=='celeba128':
+     train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
+     test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional, size=128)
 obs_shape = train_data.get_observation_size() # e.g. a tuple (32,32,3)
 assert len(obs_shape) == 3, 'assumed right now'
 
@@ -172,6 +175,7 @@ for i in range(args.nr_gpu):
                 epsilon = 0.5 - 1e-5
             else:
                 epsilon = 1e-5
+            epsilon = 0.05
             new_x_gen.append(nn.sample_from_discretized_mix_logistic(out, args.nr_logistic_mix, epsilon=epsilon))
 
 # add losses and gradients together and get training updates

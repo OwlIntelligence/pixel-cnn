@@ -14,12 +14,12 @@ def read_imgs(dir):
     imgs = np.array([np.array(Image.open(os.path.join(dir, filename))) for filename in filenames]).astype(np.uint8)
     return imgs
 
-def load(data_dir, subset='train'):
+def load(data_dir, subset='train', size=64):
     if subset in ['train', 'valid', 'test']:
         if subset=='test':
             subset = 'valid'
         #trainx = np.load(os.path.join(data_dir, "img_cropped_celeba.npz"))['arr_0'][:200000, :, :, :]
-        trainx = read_imgs(os.path.join(data_dir, "celeba64-{0}-new".format(subset)))
+        trainx = read_imgs(os.path.join(data_dir, "celeba{0}-{1}-new".format(size, subset)))
         trainy = np.ones((trainx.shape[0], ))
         return trainx, trainy
     else:
@@ -28,7 +28,7 @@ def load(data_dir, subset='train'):
 class DataLoader(object):
     """ an object that generates batches of CelebA data for training """
 
-    def __init__(self, data_dir, subset, batch_size, rng=None, shuffle=False, return_labels=False):
+    def __init__(self, data_dir, subset, batch_size, rng=None, shuffle=False, return_labels=False, size=64):
         """
         - data_dir is location where to store files
         - subset is train|test
@@ -47,7 +47,7 @@ class DataLoader(object):
             os.makedirs(data_dir)
 
         # load CIFAR-10 training data to RAM
-        self.data, self.labels = load(self.data_dir, subset=subset)
+        self.data, self.labels = load(self.data_dir, subset=subset, size=size)
         # self.data = np.transpose(self.data, (0,2,3,1)) # (N,3,32,32) -> (N,32,32,3)
 
         self.p = 0 # pointer to where we are in iteration

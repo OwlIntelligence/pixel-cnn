@@ -83,3 +83,18 @@ configs['celeba128'] = {
     "map_sampling": False,
     "nr_gpu": 4,
 }
+
+configs['celeba128-patch'] = {
+    "data_dir": "/data/ziz/not-backed-up/jxu/CelebA",
+    "save_dir": "/data/ziz/jxu/models/celeba128-model",
+    "nr_filters": 50,
+    "nr_resnet": 3,
+    "data_set": "celeba128",
+    "batch_size": 4,
+    "init_batch_size": 4,
+    #"spatial_conditional": True,
+    'global_conditional': True,
+    "save_interval": 5,
+    "map_sampling": False,
+    "nr_gpu": 4,
+}

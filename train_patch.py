@@ -92,8 +92,8 @@ test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shu
 if args.data_set=='celeba128':
      train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
      test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional, size=128)
-obs_shape = train_data.get_observation_size() # e.g. a tuple (32,32,3)
-assert len(obs_shape) == 3, 'assumed right now'
+img_shape = train_data.get_observation_size() # e.g. a tuple (32,32,3)
+obs_shape = (32, 32, 3)
 
 # data place holders
 x_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + obs_shape)
@@ -102,7 +102,7 @@ gh_init, sh_init = None, None
 ghs, shs, gh_sample, sh_sample = [[None] * args.nr_gpu for i in range(4)]
 
 if args.global_conditional:
-    latent_dim = num_labels
+    latent_dim = 2
     gh_init = tf.placeholder(tf.int32, shape=(args.init_batch_size, latent_dim))
     ghs = [tf.placeholder(tf.int32, shape=(args.batch_size, latent_dim)) for i in range(args.nr_gpu)]
 if args.spatial_conditional:
@@ -111,28 +111,6 @@ if args.spatial_conditional:
     shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + latent_shape ) for i in range(args.nr_gpu)]
     sh_sample = shs
 
-
-
-
-# if the model is class-conditional we'll set up label placeholders + one-hot encodings 'h' to condition on
-
-# if args.class_conditional:
-#     num_labels = train_data.get_num_labels()
-#     y_init = tf.placeholder(tf.int32, shape=(args.init_batch_size,))
-#     h_init = tf.one_hot(y_init, num_labels)
-#     y_sample = np.split(np.mod(np.arange(args.batch_size*args.nr_gpu), num_labels), args.nr_gpu)
-#     h_sample = [tf.one_hot(tf.Variable(y_sample[i], trainable=False), num_labels) for i in range(args.nr_gpu)]
-#     ys = [tf.placeholder(tf.int32, shape=(args.batch_size,)) for i in range(args.nr_gpu)]
-#     hs = [tf.one_hot(ys[i], num_labels) for i in range(args.nr_gpu)]
-# elif args.spatial_conditional:
-#     lat_shape = obs_shape
-#     hs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + lat_shape ) for i in range(args.nr_gpu)]
-#     h_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + obs_shape)
-#     h_sample = [None] * args.nr_gpu
-# else:
-#     h_init = None
-#     h_sample = [None] * args.nr_gpu
-#     hs = h_sample
 
 
 # create the model
@@ -232,23 +210,42 @@ def make_feed_dict(data, init=False):
     else:
         x = data
         y = None
-    x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
+    full_images = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
+
+    ## random rectangle crop
+    bsize = full_images.shape[0]
+    crange = img_shape[0]-obs_shape[0]
+    rng = np.random.RandomState(None)
+    coordinate = rng.randint(low=0, high=crange, size=(bsize, 2))
+    x = []
+    for k in range(bsize):
+        cy, cx = coordinate[:, k]
+        x.append(full_images[k][cy:cy+obs_shape[0], cx:cx+obs_shape[1], :])
+    x = np.array(x)
+    y = coordinate.astype(np.float32)
+    y =/ (float(crange)/2)
+    y -= 1.
+
     if init:
         feed_dict = {x_init: x}
         if gh_init is not None:
-            pass #feed_dict.update({gh_init: x})
+            feed_dict.update({gh_init: y})
         if sh_init is not None:
             h = x.copy()
             h = uf.mask_inputs(h, train_mgen)
             feed_dict.update({sh_init: h})
     else:
         x = np.split(x, args.nr_gpu)
+        if y is not None:
+            y = np.split(y, args.nr_gpu)
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
         if args.spatial_conditional:
             h = [x[i].copy() for i in range(args.nr_gpu)]
             for i in range(args.nr_gpu):
                 h[i] = uf.mask_inputs(h[i], train_mgen)
             feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
+        if args.global_conditional:
+            feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
     return feed_dict
 
 # def make_feed_dict(data, init=False):

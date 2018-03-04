@@ -223,7 +223,7 @@ def make_feed_dict(data, init=False):
         x.append(full_images[k][cy:cy+obs_shape[0], cx:cx+obs_shape[1], :])
     x = np.array(x)
     y = coordinate.astype(np.float32)
-    y =/ (float(crange)/2)
+    y /= (float(crange)/2)
     y -= 1.
 
     if init:

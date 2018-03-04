@@ -219,7 +219,7 @@ def make_feed_dict(data, init=False):
     coordinate = rng.randint(low=0, high=crange, size=(bsize, 2))
     x = []
     for k in range(bsize):
-        cy, cx = coordinate[:, k]
+        cy, cx = coordinate[k]
         x.append(full_images[k][cy:cy+obs_shape[0], cx:cx+obs_shape[1], :])
     x = np.array(x)
     y = coordinate.astype(np.float32)

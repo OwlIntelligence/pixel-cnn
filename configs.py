@@ -105,7 +105,7 @@ configs['celeba128-patch'] = {
     'global_conditional': True,
     "save_interval": 5,
     "map_sampling": False,
-    "nr_gpu": 2,
+    "nr_gpu": 4,
     'context_conditioning': True,
     "input_size": 32,
     "global_latent_dim": 2,

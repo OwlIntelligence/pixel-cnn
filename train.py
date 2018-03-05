@@ -225,7 +225,7 @@ def sample_from_model(sess, data=None):
     if data is not None and type(data) is not tuple:
         x = data
     x = np.cast[np.float32]((x - 127.5) / 127.5)
-    x, y = uf.random_crop_images(x, input_size=(args.input_size, args.input_size))
+    x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
     x = np.split(x, args.nr_gpu)
     h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):

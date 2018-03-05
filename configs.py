@@ -23,6 +23,10 @@ def config_args(args, config):
         args.map_sampling = config['map_sampling']
     if "nr_gpu" in config:
         args.nr_gpu = config['nr_gpu']
+    if "context_conditioning" in config:
+        args.context_conditioning = config['context_conditioning']
+    if "input_size" in config:
+        args.input_size = config['input_size']
 
 
 

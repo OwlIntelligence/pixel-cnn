@@ -25,8 +25,11 @@ def config_args(args, config):
         args.nr_gpu = config['nr_gpu']
     if "context_conditioning" in config:
         args.context_conditioning = config['context_conditioning']
-    if "input_size" in config:
-        args.input_size = config['input_size']
+    if "global_latent_dim" in config:
+        args.global_latent_dim = config['global_latent_dim']
+    if "spatial_latent_num_channel" in config:
+        args.spatial_latent_num_channel = config['spatial_latent_num_channel']
+
 
 
 
@@ -103,4 +106,6 @@ configs['celeba128-patch'] = {
     "nr_gpu": 2,
     'context_conditioning': True,
     "input_size": 32,
+    "global_latent_dim": 2,
+    "spatial_latent_num_channel": 4,
 }

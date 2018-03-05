@@ -195,7 +195,7 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 # mask generator
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
 test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
-sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.75)
+sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.125)
 
 # sample from the model
 # def sample_from_model(sess, data=None):
@@ -228,8 +228,7 @@ def sample_from_model(sess, data=None):
     x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
     x = np.split(x, args.nr_gpu)
     y = np.split(y, args.nr_gpu)
-    print("sample")
-    print(y[0])
+
     h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
         h[i] = uf.mask_inputs(h[i], sample_mgen)
@@ -290,8 +289,6 @@ def make_feed_dict(data, init=False):
 
     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
     x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
-    print("make")
-    print(y)
 
     if init:
         feed_dict = {x_init: x}

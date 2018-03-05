@@ -227,11 +227,12 @@ def sample_from_model(sess, data=None):
     x = np.cast[np.float32]((x - 127.5) / 127.5)
     x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
     x = np.split(x, args.nr_gpu)
+    y = np.split(y, args.nr_gpu)
     h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
         h[i] = uf.mask_inputs(h[i], sample_mgen)
     feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
-    feed_dict.update({ghs[i]: y for i in range(args.nr_gpu)})
+    feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
 
     if args.context_conditioning:
         x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]

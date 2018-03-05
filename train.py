@@ -120,8 +120,8 @@ gh_init, sh_init = None, None
 ghs, shs, gh_sample, sh_sample = [[None] * args.nr_gpu for i in range(4)]
 
 if args.global_conditional:
-    gh_init = tf.placeholder(tf.int32, shape=(args.init_batch_size, args.global_latent_dim))
-    ghs = [tf.placeholder(tf.int32, shape=(args.batch_size, args.global_latent_dim)) for i in range(args.nr_gpu)]
+    gh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size, args.global_latent_dim))
+    ghs = [tf.placeholder(tf.float32, shape=(args.batch_size, args.global_latent_dim)) for i in range(args.nr_gpu)]
     gh_sample = ghs
 if args.spatial_conditional:
     spatial_latent_shape = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel ##

@@ -108,7 +108,6 @@ if args.data_set=='celeba128':
      train_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
      test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional, size=128)
 img_shape = train_data.get_observation_size() # e.g. a tuple (32,32,3)
-assert len(obs_shape) == 3, 'assumed right now'
 if args.input_size < 0:
     obs_shape = img_shape
 else:

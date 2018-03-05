@@ -135,14 +135,19 @@ for i in range(args.nr_gpu):
     with tf.device('/gpu:%d' % i):
         # train
         out = model(xs[i], ghs[i], shs[i], ema=None, dropout_p=args.dropout_p, **model_opt)
-        loss_gen.append(loss_fun(tf.stop_gradient(xs[i]), out, masks=shs[i][:, :, :, -1]))
-
+        if args.spatial_conditional:
+            loss_gen.append(loss_fun(tf.stop_gradient(xs[i]), out, masks=shs[i][:, :, :, -1]))
+        else:
+            loss_gen.append(loss_fun(tf.stop_gradient(xs[i]), out))
         # gradients
         grads.append(tf.gradients(loss_gen[i], all_params, colocate_gradients_with_ops=True))
 
         # test
         out = model(xs[i], ghs[i], shs[i], ema=ema, dropout_p=0., **model_opt)
-        loss_gen_test.append(loss_fun(xs[i], out, masks=shs[i][:, :, :, -1]))
+        if args.spatial_conditional:
+            loss_gen_test.append(loss_fun(xs[i], out, masks=shs[i][:, :, :, -1]))
+        else:
+            loss_gen_test.append(loss_fun(xs[i], out))
 
         # sample
         out = model(xs[i], gh_sample[i], sh_sample[i], ema=ema, dropout_p=0, **model_opt)

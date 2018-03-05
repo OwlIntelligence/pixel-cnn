@@ -43,7 +43,7 @@ def random_crop_images(inputs, output_size):
     for i in range(bsize):
         coor_h = np.random.randint(low=0, high=input_h-output_h+1)
         coor_w = np.random.randint(low=0, high=input_w-output_w+1)
-        x.append(inputs[i][coor_h:coor_h+output+h, coor_w:coor_w+output_w, :])
+        x.append(inputs[i][coor_h:coor_h+output_h, coor_w:coor_w+output_w, :])
         y.append([float(coor_h)/(input_h-output_h+1), float(coor_w)/(input_w-output_w+1)])
     x = np.array(x)
     y = np.array(y)

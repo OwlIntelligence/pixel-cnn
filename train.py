@@ -105,7 +105,7 @@ else:
 train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
 test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional)
 if args.data_set=='celeba128':
-     train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
+     train_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
      test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional, size=128)
 img_shape = train_data.get_observation_size() # e.g. a tuple (32,32,3)
 if args.input_size < 0:
@@ -228,6 +228,8 @@ def sample_from_model(sess, data=None):
     x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
     x = np.split(x, args.nr_gpu)
     y = np.split(y, args.nr_gpu)
+    print("sample")
+    print(y[0])
     h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
         h[i] = uf.mask_inputs(h[i], sample_mgen)
@@ -285,21 +287,11 @@ def make_feed_dict(data, init=False):
     else:
         x = data
         y = None
-    full_images = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
 
-    ## random rectangle crop
-    bsize = full_images.shape[0]
-    crange = img_shape[0]-obs_shape[0]+1
-    rng = np.random.RandomState(None)
-    coordinate = rng.randint(low=0, high=crange, size=(bsize, 2))
-    x = []
-    for k in range(bsize):
-        cy, cx = coordinate[k]
-        x.append(full_images[k][cy:cy+obs_shape[0], cx:cx+obs_shape[1], :])
-    x = np.array(x)
-    y = coordinate.astype(np.float32)
-    y /= (float(crange)/2)
-    y -= 1.
+    x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
+    x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
+    print("make")
+    print(y)
 
     if init:
         feed_dict = {x_init: x}

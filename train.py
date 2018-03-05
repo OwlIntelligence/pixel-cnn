@@ -225,12 +225,13 @@ def sample_from_model(sess, data=None):
     if data is not None and type(data) is not tuple:
         x = data
     x = np.cast[np.float32]((x - 127.5) / 127.5)
+    x, y = uf.random_crop_images(x, input_size=(args.input_size, args.input_size))
     x = np.split(x, args.nr_gpu)
     h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
         h[i] = uf.mask_inputs(h[i], sample_mgen)
     feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
-    feed_dict.update({ghs[i]: np.zeros((args.batch_size, 2)) for i in range(args.nr_gpu)})
+    feed_dict.update({ghs[i]: y for i in range(args.nr_gpu)})
 
     if args.context_conditioning:
         x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
@@ -287,7 +288,7 @@ def make_feed_dict(data, init=False):
 
     ## random rectangle crop
     bsize = full_images.shape[0]
-    crange = img_shape[0]-obs_shape[0]
+    crange = img_shape[0]-obs_shape[0]+1
     rng = np.random.RandomState(None)
     coordinate = rng.randint(low=0, high=crange, size=(bsize, 2))
     x = []

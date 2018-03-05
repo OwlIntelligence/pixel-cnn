@@ -195,8 +195,32 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 # mask generator
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
 test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
+sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.75)
 
 # sample from the model
+# def sample_from_model(sess, data=None):
+#     if data is not None and type(data) is not tuple:
+#         x = data
+#     x = np.cast[np.float32]((x - 127.5) / 127.5)
+#     x = np.split(x, args.nr_gpu)
+#     h = [x[i].copy() for i in range(args.nr_gpu)]
+#     for i in range(args.nr_gpu):
+#         h[i] = uf.mask_inputs(h[i], test_mgen)
+#     feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
+#     #x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
+#     x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
+#     m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
+#     #assert m_gen[0]==m_gen[-1], "we currently assume all masks are the same during sampling"
+#     m_gen = m_gen[0][0]
+#     for yi in range(obs_shape[0]):
+#         for xi in range(obs_shape[1]):
+#             if m_gen[yi,xi] == 0:
+#                 feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
+#                 new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
+#                 for i in range(args.nr_gpu):
+#                     x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
+#     return np.concatenate(x_gen, axis=0)
+
 def sample_from_model(sess, data=None):
     if data is not None and type(data) is not tuple:
         x = data
@@ -204,13 +228,15 @@ def sample_from_model(sess, data=None):
     x = np.split(x, args.nr_gpu)
     h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
-        h[i] = uf.mask_inputs(h[i], test_mgen)
+        h[i] = uf.mask_inputs(h[i], sample_mgen)
     feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
-    #x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
-    x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
-    m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
-    #assert m_gen[0]==m_gen[-1], "we currently assume all masks are the same during sampling"
-    m_gen = m_gen[0][0]
+    feed_dict.update({ghs[i]: np.zeros((args.batch_size, 2)) for i in range(args.nr_gpu)})
+
+    if args.context_conditioning:
+        x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
+        m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
+        m_gen = m_gen[0][0]
+
     for yi in range(obs_shape[0]):
         for xi in range(obs_shape[1]):
             if m_gen[yi,xi] == 0:
@@ -219,6 +245,7 @@ def sample_from_model(sess, data=None):
                 for i in range(args.nr_gpu):
                     x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
     return np.concatenate(x_gen, axis=0)
+
 
 # init & save
 initializer = tf.global_variables_initializer()

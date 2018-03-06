@@ -62,18 +62,21 @@ class CenterEllipseMaskGenerator(MaskGenerator):
 
 class RandomRectangleMaskGenerator(MaskGenerator):
 
-    def __init__(self, height, width):
+    def __init__(self, height, width, min_ratio=0.25, max_ratio=0.75, margin_ratio=0.):
         super().__init__(height, width)
+        self.min_ratio = min_ratio
+        self.max_ratio = max_ratio
+        self.margin_ratio = margin_ratio
 
-    def gen(self, n, min_ratio=0.25, max_ratio=0.75, margin_ratio=0.):
+    def gen(self, n):
         self.masks = np.ones((n, self.height, self.width))
         for i in range(self.masks.shape[0]):
-            min_height = int(self.height * min_ratio)
-            min_width = int(self.width * min_ratio)
-            max_height = int(self.height * max_ratio)
-            max_width = int(self.width * max_ratio)
-            margin_height = int(self.height * margin_ratio)
-            margin_width = int(self.width * margin_ratio)
+            min_height = int(self.height * self.min_ratio)
+            min_width = int(self.width * self.min_ratio)
+            max_height = int(self.height * self.max_ratio)
+            max_width = int(self.width * self.max_ratio)
+            margin_height = int(self.height * self.margin_ratio)
+            margin_width = int(self.width * self.margin_ratio)
             rng = np.random.RandomState(None)
             c_height = rng.randint(low=min_height, high=max_height)
             c_width = rng.randint(low=min_width, high=max_width)

@@ -360,5 +360,5 @@ with tf.Session(config=config) as sess:
         sample_x[i] *= contour
 
     from PIL import Image
-    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(5,5)), 'RGB')
+    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(4,4)), 'RGB')
     img.save(os.path.join("plots", '%s_complete_%s.png' % (args.data_set, exp_label)))

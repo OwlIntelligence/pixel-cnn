@@ -233,7 +233,7 @@ def sample_from_model(sess, data=None):
         x = data
     x = np.cast[np.float32]((x - 127.5) / 127.5)
     # x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
-    x, y = uf.tile_crop_images(x, output_size=(args.input_size, args.input_size))
+    x, y = uf.tile_crop_images(x[0], output_size=(args.input_size, args.input_size))
 
 
     x = np.split(x, args.nr_gpu)

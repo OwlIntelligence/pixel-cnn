@@ -334,7 +334,10 @@ with tf.Session(config=config) as sess:
     sample_x = []
     all_data = []
     for i in range(args.num_samples):
-        all_data.append(next(test_data))
+        d = next(test_data)
+        for k in range(d.shape[0]):
+            d[k] = d[0].copy()
+        all_data.append(d)
         sample_x.append(sample_from_model(sess, data=all_data[-1])) ##
     sample_x = np.concatenate(sample_x, axis=0)
     all_data = np.concatenate(all_data, axis=0)

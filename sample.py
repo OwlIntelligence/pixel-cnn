@@ -78,7 +78,7 @@ elif args.nr_gpu == 4:
     os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
 
 
-exp_label = 'celeba128'
+exp_label = 'sample'
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility
@@ -334,6 +334,10 @@ config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
 
     dd = next(text_data)
+    from PIL import Image
+    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(5,5)), 'RGB')
+    img.save(os.path.join("plots", '%s_original_%s.png' % (args.data_set, exp_label)))
+    quit()
 
 
     ckpt_file = args.save_dir + '/params_' + args.data_set + '.ckpt'

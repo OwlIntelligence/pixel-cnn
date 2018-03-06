@@ -60,8 +60,8 @@ def tile_crop_images(input, output_size):
     coor_h = 0
     coor_w = 0
     for i in range(bsize):
-        h = i // (input_w / output_w)
-        w = i - h * (input_w / output_w)
+        h = i // (input_w // output_w)
+        w = i - h * (input_w // output_w)
         coor_h = h * output_h
         coor_w = w * output_w
         x.append(inputs[i][coor_h:coor_h+output_h, coor_w:coor_w+output_w, :])

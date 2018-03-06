@@ -52,7 +52,7 @@ def random_crop_images(inputs, output_size):
 def tile_crop_images(input, output_size):
     input_h, input_w, _ = input.shape
     output_h, output_w = output_size
-    bsize = (input_h / output_h) * (input_w / output_w)
+    bsize = (input_h // output_h) * (input_w // output_w)
     inputs = [input.copy() for i in range(bsize)]
 
     x = []

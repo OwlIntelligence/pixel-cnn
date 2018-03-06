@@ -49,6 +49,26 @@ def random_crop_images(inputs, output_size):
     y = np.array(y)
     return x, y
 
+def tile_crop_images(input, output_size):
+    input_h, input_w, _ = input.shape
+    output_h, output_w = output_size
+    bsize = (input_h / output_h) * (input_w / output_w)
+    inputs = [input.copy() for i in range(bsize)]
+
+    x = []
+    y = []
+    coor_h = 0
+    coor_w = 0
+    for i in range(bsize):
+        h = i // (input_w / output_w)
+        w = i - h * (input_w / output_w)
+        coor_h = h * output_h
+        coor_w = w * output_w
+        x.append(inputs[i][coor_h:coor_h+output_h, coor_w:coor_w+output_w, :])
+        y.append([float(coor_h)/(input_h-output_h), float(coor_w)/(input_w-output_w)])
+    x = np.array(x)
+    y = np.array(y)
+    return x, y
 
 ## https://github.com/aizvorski/video-quality/blob/master/psnr.py
 

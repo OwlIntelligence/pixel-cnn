@@ -232,10 +232,9 @@ def sample_from_model(sess, data=None):
     if data is not None and type(data) is not tuple:
         x = data
     x = np.cast[np.float32]((x - 127.5) / 127.5)
-    x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
+    # x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
+    x, y = uf.tile_crop_images(x, output_size=(args.input_size, args.input_size))
 
-    for i in range(x.shape[0]):
-        x[i] = x[0].copy()
 
     x = np.split(x, args.nr_gpu)
     y = np.split(y, args.nr_gpu)
@@ -333,12 +332,6 @@ lr = args.learning_rate
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
-
-    dd = next(test_data)
-
-    img = Image.fromarray(uf.tile_images(dd.astype(np.uint8), size=(5,5)), 'RGB')
-    img.save(os.path.join("plots", '%s_original_%s.png' % (args.data_set, exp_label)))
-    quit()
 
 
     ckpt_file = args.save_dir + '/params_' + args.data_set + '.ckpt'

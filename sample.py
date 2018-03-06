@@ -21,6 +21,7 @@ from pixel_cnn_pp.model import model_spec
 from utils import plotting
 import utils.mask as um
 import utils.mfunc as uf
+from PIL import Image
 
 # self define modules
 from configs import config_args, configs
@@ -333,9 +334,9 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
 
-    dd = next(text_data)
-    from PIL import Image
-    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(5,5)), 'RGB')
+    dd = next(test_data)
+
+    img = Image.fromarray(uf.tile_images(dd.astype(np.uint8), size=(5,5)), 'RGB')
     img.save(os.path.join("plots", '%s_original_%s.png' % (args.data_set, exp_label)))
     quit()
 

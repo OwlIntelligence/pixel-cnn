@@ -239,16 +239,18 @@ def sample_from_model(sess, data=None):
     xg = np.concatenate([x, g], axis=-1)
     xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
     x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
-    print(x.shape)
-    print(g.shape)
     x = np.split(x, args.nr_gpu)
+    g = np.split(g, args.nr_gpu)
     # y = np.split(y, args.nr_gpu)
 
     h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
         h[i] = uf.mask_inputs(h[i], sample_mgen)
-    feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
-    feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
+        h[i] = np.concatenate([g[i], h[i]], axis=-1)
+    if args.spatial_conditional:
+        feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
+    if args.global_conditional:
+        feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
 
     if args.context_conditioning:
         x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
@@ -307,9 +309,6 @@ def make_feed_dict(data, init=False):
     xg = np.concatenate([x, g], axis=-1)
     xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
     x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
-    print(x.shape)
-    print(g.shape)
-
 
     if init:
         feed_dict = {x_init: x}
@@ -318,9 +317,11 @@ def make_feed_dict(data, init=False):
         if sh_init is not None:
             h = x.copy()
             h = uf.mask_inputs(h, train_mgen)
+            h = np.concatenate([g, h], axis=-1)
             feed_dict.update({sh_init: h})
     else:
         x = np.split(x, args.nr_gpu)
+        g = np.split(g, args.nr_gpu)
         if y is not None:
             y = np.split(y, args.nr_gpu)
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
@@ -328,6 +329,7 @@ def make_feed_dict(data, init=False):
             h = [x[i].copy() for i in range(args.nr_gpu)]
             for i in range(args.nr_gpu):
                 h[i] = uf.mask_inputs(h[i], train_mgen)
+                h[i] = np.concatenate([g[i], h[i]], axis=-1)
             feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
         if args.global_conditional:
             feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})

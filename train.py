@@ -202,13 +202,10 @@ bits_per_dim = loss_gen[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch
 bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch_size)
 
 # mask generator
-#train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
+train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
 #train_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
-#test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
-
-train_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.75)
-test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.75)
-sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.75)
+test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
+sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.875)
 
 # sample from the model
 # def sample_from_model(sess, data=None):

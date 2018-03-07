@@ -21,6 +21,7 @@ from pixel_cnn_pp.model import model_spec
 from utils import plotting
 import utils.mask as um
 import utils.mfunc as uf
+import utils.grid as grid
 
 # self define modules
 from configs import config_args, configs
@@ -227,7 +228,12 @@ def sample_from_model(sess, data=None):
     if data is not None and type(data) is not tuple:
         x = data
     x = np.cast[np.float32]((x - 127.5) / 127.5)
-    x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
+    g = grid.generate_grid((x.shape[1], x.shape[2]))
+    x = np.concatenate([x, np.broadcast_to(g, shape=(x.shape[0],g.shape[0],g.shape[1],g.shape[2]))], axis=-1)
+    print(x.shape)
+    quit()
+
+    #x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
     x = np.split(x, args.nr_gpu)
     y = np.split(y, args.nr_gpu)
 
@@ -290,7 +296,11 @@ def make_feed_dict(data, init=False):
         y = None
 
     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
-    x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
+    g = grid.generate_grid((x.shape[1], x.shape[2]))
+    x = np.concatenate([x, np.broadcast_to(g, shape=(x.shape[0],g.shape[0],g.shape[1],g.shape[2]))], axis=-1)
+    print(x.shape)
+    quit()
+    #x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
 
     if init:
         feed_dict = {x_init: x}

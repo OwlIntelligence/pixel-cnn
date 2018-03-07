@@ -253,7 +253,7 @@ def sample_from_model(sess, data=None):
         feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
 
     if args.context_conditioning:
-        x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
+        x_gen = [h[i][:,:,:,-4:-1].copy() for i in range(args.nr_gpu)]
         m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
         m_gen = m_gen[0][0]
 

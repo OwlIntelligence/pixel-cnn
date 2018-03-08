@@ -21,7 +21,7 @@ from pixel_cnn_pp.model import model_spec
 from utils import plotting
 import utils.mask as um
 import utils.mfunc as uf
-from PIL import Image
+import utils.grid as grid
 
 # self define modules
 from configs import config_args, configs
@@ -63,6 +63,7 @@ parser.add_argument('-gd', '--global_latent_dim', type=int, default=10, help='di
 parser.add_argument('-sn', '--spatial_latent_num_channel', type=int, default=4, help='number of channels for spatial latent variables')
 parser.add_argument('-is', '--input_size', type=int, default=-1, help='input size')
 parser.add_argument('-cc', '--context_conditioning', dest='context_conditioning', action='store_true', help='Condition on context (masked inputs)?')
+parser.add_argument('-dg', '--debug', dest='debug', action='store_true', help='Under debug mode?')
 #
 args = parser.parse_args()
 
@@ -77,9 +78,6 @@ elif args.nr_gpu == 3:
     os.environ['CUDA_VISIBLE_DEVICES'] = '5,6,7'
 elif args.nr_gpu == 4:
     os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
-
-
-exp_label = 'sample'
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility
@@ -106,12 +104,17 @@ elif 'celeba' in args.data_set:
     DataLoader = celeba_data.DataLoader
 else:
     raise("unsupported dataset")
-
 if args.data_set=='celeba128':
-     train_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
-     test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional, size=128)
+    if args.debug:
+        train_data = DataLoader(args.data_dir, 'valid', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
+    else:
+        train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
+    test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional, size=128)
 else:
-    train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
+    if args.debug:
+        train_data = DataLoader(args.data_dir, 'valid', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
+    else:
+        train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
     test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional)
 img_shape = train_data.get_observation_size() # e.g. a tuple (32,32,3)
 if args.input_size < 0:
@@ -199,10 +202,10 @@ bits_per_dim = loss_gen[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch
 bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch_size)
 
 # mask generator
-#train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
-train_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
-test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
-sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.5)
+train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
+#train_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
+test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
+sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.875)
 
 # sample from the model
 # def sample_from_model(sess, data=None):
@@ -232,28 +235,32 @@ def sample_from_model(sess, data=None):
     if data is not None and type(data) is not tuple:
         x = data
     x = np.cast[np.float32]((x - 127.5) / 127.5)
-    # x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
-    x, y = uf.tile_crop_images(x[0], output_size=(args.input_size, args.input_size))
-
-
+    g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
+    xg = np.concatenate([x, g], axis=-1)
+    #xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
+    xg, _ = uf.tile_crop_images(xg, output_size=(args.input_size, args.input_size))
+    x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
     x = np.split(x, args.nr_gpu)
-    y = np.split(y, args.nr_gpu)
+    g = np.split(g, args.nr_gpu)
+    # y = np.split(y, args.nr_gpu)
 
     h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
         h[i] = uf.mask_inputs(h[i], sample_mgen)
-    feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
-    feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
+        h[i] = np.concatenate([g[i], h[i]], axis=-1)
+    if args.spatial_conditional:
+        feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
+    if args.global_conditional:
+        feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
 
     if args.context_conditioning:
-        x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
+        x_gen = [h[i][:,:,:,-4:-1].copy() for i in range(args.nr_gpu)]
         m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
         m_gen = m_gen[0][0]
 
     for yi in range(obs_shape[0]):
         for xi in range(obs_shape[1]):
             if m_gen[yi,xi] == 0:
-                print((yi, xi))
                 feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
                 new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
                 for i in range(args.nr_gpu):
@@ -299,7 +306,10 @@ def make_feed_dict(data, init=False):
         y = None
 
     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
-    x, y = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
+    g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
+    xg = np.concatenate([x, g], axis=-1)
+    xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
+    x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
 
     if init:
         feed_dict = {x_init: x}
@@ -308,9 +318,11 @@ def make_feed_dict(data, init=False):
         if sh_init is not None:
             h = x.copy()
             h = uf.mask_inputs(h, train_mgen)
+            h = np.concatenate([g, h], axis=-1)
             feed_dict.update({sh_init: h})
     else:
         x = np.split(x, args.nr_gpu)
+        g = np.split(g, args.nr_gpu)
         if y is not None:
             y = np.split(y, args.nr_gpu)
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
@@ -318,6 +330,7 @@ def make_feed_dict(data, init=False):
             h = [x[i].copy() for i in range(args.nr_gpu)]
             for i in range(args.nr_gpu):
                 h[i] = uf.mask_inputs(h[i], train_mgen)
+                h[i] = np.concatenate([g[i], h[i]], axis=-1)
             feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
         if args.global_conditional:
             feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})

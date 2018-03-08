@@ -238,7 +238,7 @@ def sample_from_model(sess, data=None):
     g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
     xg = np.concatenate([x, g], axis=-1)
     #xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
-    xg, _ = uf.tile_crop_images(xg, output_size=(args.input_size, args.input_size))
+    xg, _ = uf.tile_crop_images(xg[0], output_size=(args.input_size, args.input_size))
     x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
     x = np.split(x, args.nr_gpu)
     g = np.split(g, args.nr_gpu)

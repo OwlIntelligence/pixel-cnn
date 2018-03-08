@@ -79,6 +79,8 @@ elif args.nr_gpu == 3:
 elif args.nr_gpu == 4:
     os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
 
+exp_label = 'sample'
+
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility
 rng = np.random.RandomState(args.seed)

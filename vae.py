@@ -14,7 +14,7 @@ tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/Ce
 
 FLAGS = tf.flags.FLAGS
 
-def generative_network(z, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
+def generative_network(z, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_filters=160, nr_logistic_mix=FLAGS.nr_mix):
     counters = {}
     with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p):
         net = tf.reshape(z, [FLAGS.batch_size, 1, 1, FLAGS.z_dim])
@@ -136,7 +136,6 @@ with tf.Session(config=config) as sess:
     d = np.cast[np.float32]((d - 127.5) / 127.5)
     feed_dict = {x: d}
     output = sess.run([inf_init_pass, gen_init_pass], feed_dict=feed_dict)
-    print(output)
 
     num_epoch = 100
     for i in range(num_epoch):

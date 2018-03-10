@@ -153,7 +153,7 @@ def sample_x(params):
     return x
 
 
-x = tf.placeholder(tf.float32, shape=())
+x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 128, 128, 3))
 loc, scale = inference_network(x)
 z = sample_z(loc, scale)
 params = generative_network(z)

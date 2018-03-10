@@ -13,6 +13,7 @@ tf.flags.DEFINE_integer("z_dim", default_value=500, docstring="latent dimension"
 tf.flags.DEFINE_integer("batch_size", default_value=50, docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")
+tf.flags.DEFINE_string("data_set", default_value="celeba64", docstring="")
 
 FLAGS = tf.flags.FLAGS
 
@@ -158,5 +159,5 @@ with tf.Session(config=config) as sess:
             test_data.reset()
 
             img_tile = plotting.img_tile(sample_x[:25], aspect_ratio=1.0, border_color=1.0, stretch=True)
-            img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
-            plotting.plt.savefig(os.path.join(FLAGS.save_dir,'%s_sample%d.png' % (args.data_set, epoch)))
+            img = plotting.plot_img(img_tile, title=FLAGS.data_set + ' samples')
+            plotting.plt.savefig(os.path.join(FLAGS.save_dir,'%s_sample%d.png' % (FLAGS.data_set, epoch)))

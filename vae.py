@@ -135,8 +135,9 @@ with tf.Session(config=config) as sess:
         for data in train_data:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
             feed_dict = {x: data}
-            z_sample = sess.run(z, feed_dict=feed_dict)
-            print(z_sample)
+            x_sample = sess.run(xs, feed_dict=feed_dict)
+            x = 127.5 * x + 127.5
+            print(x_sample)
             quit()
 
 

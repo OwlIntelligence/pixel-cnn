@@ -182,5 +182,5 @@ with tf.Session(config=config) as sess:
     sess.run(initializer)
     for data in train_data:
         feed_dict = {x: data}
-        l = sess.run([z], feed_dict=feed_dict)
+        l = sess.run([reconstruction_loss, latent_KL], feed_dict=feed_dict)
         print(l)

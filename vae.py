@@ -159,7 +159,7 @@ z = sample_z(loc, scale)
 params = generative_network(z)
 
 reconstruction_loss = -discretized_mix_logistic_loss(x, params)
-latent_KL = 0.5 * tf.reduce_sum(tf.square(z_mean) + tf.square(z_stddev) - tf.log(tf.square(z_stddev)) - 1,1)
+latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
 loss = reconstruction_loss + latent_KL
 
 print(loss)

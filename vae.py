@@ -113,7 +113,7 @@ dist_g = tf.distributions.Normal(loc=loc_g, scale=scale_g)
 
 #xs = sample_x(params)
 
-reconstruction_loss = - dist_g.log_prob(x) # nn.discretized_mix_logistic_loss(x, params, False)
+reconstruction_loss = - np.sum(dist_g.log_prob(x), axis=[1,2,3]) # nn.discretized_mix_logistic_loss(x, params, False)
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
 loss = tf.reduce_mean(reconstruction_loss + latent_KL)
 loss = reconstruction_loss

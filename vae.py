@@ -132,7 +132,9 @@ config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
     # init
     sess.run(initializer)
-    feed_dict = {x: next(train_data)}
+    d = next(train_data)
+    d = np.cast[np.float32]((d - 127.5) / 127.5)
+    feed_dict = {x: d}
     output = sess.run([inf_init_pass, gen_init_pass], feed_dict=feed_dict)
     print(output)
 

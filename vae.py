@@ -114,7 +114,7 @@ latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.sq
 loss = tf.reduce_mean(reconstruction_loss + latent_KL)
 loss = reconstruction_loss
 
-#train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
+train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
 
 initializer = tf.global_variables_initializer()
 

@@ -26,7 +26,7 @@ def generative_network(z, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_f
         #loc = nn.deconv2d(net, 3, filter_size=[1,1], stride=[1,1], pad='SAME', nonlinearity=tf.nn.tanh)
         #scale = nn.deconv2d(net, 3, filter_size=[1,1], stride=[1,1], pad='SAME', nonlinearity=tf.nn.softplus)
         net = nn.deconv2d(net, 3*256, filter_size=[1,1], stride=[1,1], pad='SAME', nonlinearity=tf.nn.tanh)
-        return network
+        return netw 
 
 def inference_network(x, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
     counters = {}

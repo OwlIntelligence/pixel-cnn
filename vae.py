@@ -119,12 +119,12 @@ reconstruction_loss = nn.discretized_mix_logistic_loss(x, params, False)
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
 loss = tf.reduce_mean(reconstruction_loss + latent_KL)
 
-train_step = tf.train.AdamOptimizer().minimize(loss)
+train_step = tf.train.GradientDescentOptimizer(0.1).minimize(loss)
 
 initializer = tf.global_variables_initializer()
 
 
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=64)
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

@@ -137,8 +137,10 @@ with tf.Session(config=config) as sess:
             feed_dict = {x: data}
             x_sample = sess.run(xs, feed_dict=feed_dict)
             x_sample = 127.5 * x_sample + 127.5
-            print(x_sample[0])
-            print(x_sample[0].shape)
+            xx = x_sample[0])
+            print(xx[:, :, 0])
+            print(xx[:, :, 1])
+            print(xx[:, :, 2])
             quit()
 
 

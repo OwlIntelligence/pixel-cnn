@@ -5,6 +5,7 @@ import time
 import data.celeba_data as celeba_data
 from tensorflow.contrib.framework.python.ops import arg_scope
 import pixel_cnn_pp.nn as nn
+from utils import plotting
 
 
 #tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")

@@ -107,7 +107,7 @@ x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
 
 loc, scale = inference_network(x)
 z = sample_z(loc, scale)
-log_g, scale_g = generative_network(z)
+loc_g, scale_g = generative_network(z)
 
 dist_g = tf.distributions.Normal(loc=loc_g, scale=scale_g)
 

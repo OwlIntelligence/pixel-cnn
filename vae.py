@@ -8,7 +8,7 @@ import pixel_cnn_pp.nn as nn
 
 
 tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")
-tf.flags.DEFINE_integer("z_dim", default_value=20, docstring="latent dimension")
+tf.flags.DEFINE_integer("z_dim", default_value=100, docstring="latent dimension")
 tf.flags.DEFINE_integer("batch_size", default_value=50, docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 
@@ -116,7 +116,6 @@ dist_g = tf.distributions.Normal(loc=loc_g, scale=scale_g)
 reconstruction_loss = - tf.reduce_sum(dist_g.log_prob(x), [1,2,3]) # nn.discretized_mix_logistic_loss(x, params, False)
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
 loss = tf.reduce_mean(reconstruction_loss + latent_KL)
-loss = reconstruction_loss
 
 train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
 

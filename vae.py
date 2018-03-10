@@ -34,6 +34,8 @@ def log_prob_from_logits(x):
     m = tf.reduce_max(x, axis, keep_dims=True)
     return x - m - tf.log(tf.reduce_sum(tf.exp(x-m), axis, keep_dims=True))
 
+kernel_initializer = tf.random_normal_initializer(0, 0.05)
+
 def discretized_mix_logistic_loss(x,l,sum_all=True):
     """ log-likelihood for mixture of discretized logistics, assumes the data has been rescaled to [-1,1] interval """
     xs = int_shape(x) # true image (i.e. labels) to regress to, e.g. (B,32,32,3)
@@ -103,48 +105,48 @@ def sample_from_discretized_mix_logistic(l,nr_mix):
 def generative_network(z):
     with tf.variable_scope("generative_network"):
         net = tf.reshape(z, [FLAGS.batch_size, 1, 1, FLAGS.z_dim])
-        net = tf.layers.conv2d_transpose(net, 2048, 4, padding='VALID')
+        net = tf.layers.conv2d_transpose(net, 2048, 4, padding='VALID', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 4x4x2048
-        net = tf.layers.conv2d_transpose(net, 1024, 5, strides=2, padding='SAME')
+        net = tf.layers.conv2d_transpose(net, 1024, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 8x8x1024
-        net = tf.layers.conv2d_transpose(net, 512, 5, strides=2, padding='SAME')
+        net = tf.layers.conv2d_transpose(net, 512, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 16x16x512
-        net = tf.layers.conv2d_transpose(net, 256, 5, strides=2, padding='SAME')
+        net = tf.layers.conv2d_transpose(net, 256, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 32x32x256
-        net = tf.layers.conv2d_transpose(net, 128, 5, strides=2, padding='SAME')
+        net = tf.layers.conv2d_transpose(net, 128, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 64x64x128
-        net = tf.layers.conv2d_transpose(net, FLAGS.nr_mix*10, 5, strides=2, padding='SAME') # 128x128x(10 nr_mix)
+        net = tf.layers.conv2d_transpose(net, FLAGS.nr_mix*10, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer) # 128x128x(10 nr_mix)
     return net
 
 def inference_network(x):
     with tf.variable_scope("inference_network"):
         net = tf.reshape(x, [FLAGS.batch_size, 128, 128, 3]) # 128x128x3
-        net = tf.layers.conv2d(net, 128, 5, strides=2, padding='SAME')
+        net = tf.layers.conv2d(net, 128, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 64x64x128
-        net = tf.layers.conv2d(net, 256, 5, strides=2, padding='SAME')
+        net = tf.layers.conv2d(net, 256, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net)
-        net = tf.layers.conv2d(net, 512, 5, strides=2, padding='SAME')
+        net = tf.layers.conv2d(net, 512, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net)
-        net = tf.layers.conv2d(net, 1024, 5, strides=2, padding='SAME')
+        net = tf.layers.conv2d(net, 1024, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net)
-        net = tf.layers.conv2d(net, 2048, 5, strides=2, padding='SAME')
+        net = tf.layers.conv2d(net, 2048, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net)
-        net = tf.layers.conv2d(net, FLAGS.z_dim, 4, padding='SAME')
+        net = tf.layers.conv2d(net, FLAGS.z_dim, 4, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net)
         net = tf.layers.dropout(net, 0.1)
         net = tf.reshape(net, [FLAGS.batch_size, -1])
-        net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None)
+        net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None, kernel_initializer=kernel_initializer)
         loc = net[:, :FLAGS.z_dim]
         scale = tf.nn.softplus(net[:, FLAGS.z_dim:])
     return loc, scale

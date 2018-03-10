@@ -118,6 +118,7 @@ initializer = tf.global_variables_initializer()
 
 
 train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
+test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -127,12 +128,22 @@ with tf.Session(config=config) as sess:
 
     num_epoch = 100
     for i in range(num_epoch):
-        loss_epoch = []
+        train_loss_epoch = []
         print(i, "----------")
         for data in train_data:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
             feed_dict = {x: data}
             l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
-            loss_epoch.append(l)
-        l = np.mean(loss_epoch)
+            train_loss_epoch.append(l)
+        train_loss_epoch = np.mean(train_loss_epoch)
         print("loss", l)
+
+        test_loss_epoch = []
+        for data in test_data:
+            data = np.cast[np.float32]((data - 127.5) / 127.5)
+            feed_dict = {x: data}
+            l = sess.run([loss], feed_dict=feed_dict)
+            test_loss_epoch.append(l)
+        test_loss_epoch = np.mean(test_loss_epoch)
+
+        print("train loss:", train_loss_epoch, " test loss:", test_loss_epoch)

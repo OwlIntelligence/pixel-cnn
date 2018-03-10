@@ -22,7 +22,7 @@ def generative_network(z, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_f
         net = nn.deconv2d(net, 256, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME')
-        net = nn.nin(tf.nn.elu(net), 10*nr_logistic_mix)
+        net = nn.deconv2d(net, 10*nr_logistic_mix, filter_size=[1,1], stride=[1,1], pad='SAME')
         return net
 
 def inference_network(x, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
@@ -90,9 +90,8 @@ def inference_network(x, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_fi
 #     return loc, scale
 
 def sample_z(loc, scale):
-    with tf.variable_scope("sample_z"):
-        dist = tf.distributions.Normal(loc=loc, scale=scale)
-        z = dist.sample()
+    dist = tf.distributions.Normal(loc=loc, scale=scale)
+    z = dist.sample()
     return z
 
 def sample_x(params):

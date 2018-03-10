@@ -100,14 +100,14 @@ def sample_x(params):
     x_hat = nn.sample_from_discretized_mix_logistic(params, FLAGS.nr_mix)
     return x_hat
 
-model_opt = {}
-gen_net = tf.make_template('gen_net', generative_network)
-inf_net = tf.make_template('inf_net', inference_network)
+#model_opt = {}
+#gen_net = tf.make_template('gen_net', generative_network)
+#inf_net = tf.make_template('inf_net', inference_network)
 
 x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
 
 # run once for data dependent initialization of parameters
-init_pass = model(x_init, gh_init, sh_init, init=True, dropout_p=args.dropout_p, **model_opt)
+#init_pass = model(x_init, gh_init, sh_init, init=True, **model_opt)
 
 
 loc, scale = inference_network(x)

@@ -14,7 +14,7 @@ tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/Ce
 
 FLAGS = tf.flags.FLAGS
 
-def generative_network(z, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_filters=160, nr_logistic_mix=FLAGS.nr_mix):
+def generative_network(z, init=False, ema=None, dropout_p=0.0):
     counters = {}
     with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p, nonlinearity=tf.nn.elu):
         net = tf.reshape(z, [FLAGS.batch_size, 1, 1, FLAGS.z_dim])
@@ -26,7 +26,7 @@ def generative_network(z, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_f
         net = nn.deconv2d(net, 3, filter_size=[1,1], stride=[1,1], pad='SAME', nonlinearity=tf.nn.tanh)
         return net
 
-def inference_network(x, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
+def inference_network(x, init=False, ema=None, dropout_p=0.0):
     counters = {}
     with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p, nonlinearity=tf.nn.elu):
         net = tf.reshape(x, [FLAGS.batch_size, 64, 64, 3])

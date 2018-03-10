@@ -134,7 +134,7 @@ with tf.Session(config=config) as sess:
         for data in train_data:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
             feed_dict = {x: data}
-            print(sess.run(latent_KL, feed_dict=feed_dict))
+            print(sess.run(reconstruction_loss, feed_dict=feed_dict))
             quit()
 
 

@@ -82,6 +82,7 @@ def discretized_mix_logistic_loss(x,l,sum_all=True, masks=None):
     log_probs = tf.where(x < -0.999, log_cdf_plus, tf.where(x > 0.999, log_one_minus_cdf_min, tf.where(cdf_delta > 1e-5, tf.log(tf.maximum(cdf_delta, 1e-12)), log_pdf_mid - np.log(127.5))))
 
     log_probs = tf.reduce_sum(log_probs,3) + log_prob_from_logits(logit_probs)
+    return log_probs
     lse = log_sum_exp(log_probs)
     if masks is not None:
         assert lse.shape==masks.shape, "shape of masks does not match the log_sum_exp outputs"

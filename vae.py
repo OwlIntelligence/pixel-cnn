@@ -111,7 +111,8 @@ xs = sample_x(params)
 
 reconstruction_loss = nn.discretized_mix_logistic_loss(x, params, False)
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
-loss = tf.reduce_mean(reconstruction_loss + latent_KL)
+#loss = tf.reduce_mean(reconstruction_loss + latent_KL)
+loss = None
 
 train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
 

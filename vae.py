@@ -177,3 +177,4 @@ with tf.Session(config=config) as sess:
     for epoch in range(10):
         feed_dict = {x: np.zeros((16,128,128,3))}
         l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
+        print(l)

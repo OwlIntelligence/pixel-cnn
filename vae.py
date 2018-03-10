@@ -127,8 +127,8 @@ with tf.Session(config=config) as sess:
     # init
     sess.run(initializer)
 
-    num_epoch = 100
-    for i in range(num_epoch):
+    max_num_epoch = 1000
+    for i in range(max_num_epoch):
         print(i, "----------")
         train_loss_epoch = []
         for data in train_data:
@@ -150,3 +150,10 @@ with tf.Session(config=config) as sess:
 
         if i%10==0:
             saver.save(sess, FLAGS.save_dir + '/params_' + 'celeba' + '.ckpt')
+
+            data = next(test_data)
+            feed_dict = {x: data}
+            reconst = sess.run([x_hat], feed_dict=feed_dict)
+            test_data.reset()
+
+            print(reconst.shape)

@@ -52,7 +52,7 @@ def discretized_mix_logistic_loss(x,l,sum_all=True, masks=None):
     logit_probs = l[:,:,:,:nr_mix]
     l = tf.reshape(l[:,:,:,nr_mix:], xs + [nr_mix*3])
     means = l[:,:,:,:,:nr_mix]
-    log_scales = tf.maximum(l[:,:,:,:,nr_mix:2*nr_mix], -7.)
+    log_scales = tf.maximum(l[:,:,:,:,nr_mix:2*nr_mix], -7.) + 1.
     coeffs = tf.nn.tanh(l[:,:,:,:,2*nr_mix:3*nr_mix])
     x = tf.reshape(x, xs + [1]) + tf.zeros(xs + [nr_mix]) # here and below: getting the means and adjusting them based on preceding sub-pixels
     m2 = tf.reshape(means[:,:,:,1,:] + coeffs[:, :, :, 0, :] * x[:, :, :, 0, :], [xs[0],xs[1],xs[2],1,nr_mix])
@@ -60,7 +60,7 @@ def discretized_mix_logistic_loss(x,l,sum_all=True, masks=None):
     means = tf.concat([tf.reshape(means[:,:,:,0,:], [xs[0],xs[1],xs[2],1,nr_mix]), m2, m3],3)
     centered_x = x - means
     inv_stdv = tf.exp(-log_scales)
-    return inv_stdv
+
     plus_in = inv_stdv * (centered_x + 1./255.)
     cdf_plus = tf.nn.sigmoid(plus_in)
     min_in = inv_stdv * (centered_x - 1./255.)

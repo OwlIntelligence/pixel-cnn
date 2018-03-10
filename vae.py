@@ -16,19 +16,19 @@ FLAGS = tf.flags.FLAGS
 
 def generative_network(z, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_filters=160, nr_logistic_mix=FLAGS.nr_mix):
     counters = {}
-    with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p):
+    with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p, nonlinearity=tf.nn.elu):
         net = tf.reshape(z, [FLAGS.batch_size, 1, 1, FLAGS.z_dim])
         net = nn.deconv2d(net, 512, filter_size=[4,4], stride=[1,1], pad='VALID')
         net = nn.deconv2d(net, 256, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 32, filter_size=[5,5], stride=[2,2], pad='SAME')
-        net = nn.deconv2d(net, 10*nr_logistic_mix, filter_size=[1,1], stride=[1,1], pad='SAME')
+        net = nn.deconv2d(net, 6, filter_size=[1,1], stride=[1,1], pad='SAME')
         return net
 
 def inference_network(x, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
     counters = {}
-    with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p):
+    with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p, nonlinearity=tf.nn.elu):
         net = tf.reshape(x, [FLAGS.batch_size, 64, 64, 3])
         net = nn.conv2d(net, 32, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.conv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME')
@@ -111,8 +111,8 @@ xs = sample_x(params)
 
 reconstruction_loss = nn.discretized_mix_logistic_loss(x, params, False)
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
-#loss = tf.reduce_mean(reconstruction_loss + latent_KL)
-loss = reconstruction_loss
+loss = tf.reduce_mean(reconstruction_loss + latent_KL)
+loss = reconstruction_loss 
 
 #train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
 
@@ -135,14 +135,7 @@ with tf.Session(config=config) as sess:
         for data in train_data:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
             feed_dict = {x: data}
-            x_sample = sess.run(xs, feed_dict=feed_dict)
-            x_sample = 127.5 * x_sample + 127.5
-            xx = x_sample[0]
-            print(xx[:, :, 0])
-            print(xx[:, :, 1])
-            print(xx[:, :, 2])
-            quit()
-
+            #x_sample = sess.run(xs, feed_dict=feed_dict)
 
             l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
             loss_epoch += l

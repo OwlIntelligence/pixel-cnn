@@ -130,8 +130,8 @@ with tf.Session(config=config) as sess:
     sess.run(initializer)
 
     max_num_epoch = 1000
-    for i in range(max_num_epoch):
-        print(i, "----------")
+    for epoch in range(max_num_epoch):
+        print("epoch:", epoch, "----------")
         train_loss_epoch = []
         for data in train_data:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
@@ -150,7 +150,7 @@ with tf.Session(config=config) as sess:
 
         print("train loss:", train_loss_epoch, " test loss:", test_loss_epoch)
 
-        if i%10==0:
+        if epoch % 10==0:
             saver.save(sess, FLAGS.save_dir + '/params_' + 'celeba' + '.ckpt')
 
             data = next(test_data)

@@ -2,10 +2,10 @@ import numpy as np
 import os
 import tensorflow as tf
 
-tf.flags.DEFINE_integer("nr_mix", default_value=10, help="number of logistic mixture components")
-tf.flags.DEFINE_integer("z_dim", default=50, help="latent dimension")
-tf.flags.DEFINE_integer("batch_size", default=16, help="")
-tf.flags.DEFINE_string("data_dir", default="/data/ziz/not-backed-up/jxu/CelebA", help="")
+tf.app.flags.DEFINE_integer("nr_mix", default=10, help="number of logistic mixture components")
+tf.app.flags.DEFINE_integer("z_dim", default=50, help="latent dimension")
+tf.app.flags.DEFINE_integer("batch_size", default=16, help="")
+tf.app.flags.DEFINE_string("data_dir", default="/data/ziz/not-backed-up/jxu/CelebA", help="")
 
 FLAGS = tf.flags.FLAGS
 

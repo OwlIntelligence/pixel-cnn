@@ -129,15 +129,14 @@ with tf.Session(config=config) as sess:
 
     num_epoch = 100
     for i in range(num_epoch):
-        train_loss_epoch = []
         print(i, "----------")
+        train_loss_epoch = []
         for data in train_data:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
             feed_dict = {x: data}
             l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
             train_loss_epoch.append(l)
         train_loss_epoch = np.mean(train_loss_epoch)
-        print("loss", l)
 
         test_loss_epoch = []
         for data in test_data:

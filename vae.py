@@ -23,8 +23,9 @@ def generative_network(z, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_f
         net = nn.deconv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 32, filter_size=[5,5], stride=[2,2], pad='SAME')
-        net = nn.deconv2d(net, 10*FLAGS.nr_mix, filter_size=[1,1], stride=[1,1], pad='SAME')
-        return net
+        loc = nn.deconv2d(net, 3, filter_size=[1,1], stride=[1,1], pad='SAME', nonlinearity=tf.nn.tanh)
+        log_scale = nn.deconv2d(net, 3, filter_size=[1,1], stride=[1,1], pad='SAME', nonlinearity=tf.nn.softplus)
+        return loc, scale
 
 def inference_network(x, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
     counters = {}
@@ -96,20 +97,23 @@ def sample_z(loc, scale):
     z = dist.sample()
     return z
 
-def sample_x(params):
-    x_hat = nn.sample_from_discretized_mix_logistic(params, FLAGS.nr_mix)
-    return x_hat
+
+# def sample_x(params):
+#     x_hat = nn.sample_from_discretized_mix_logistic(params, FLAGS.nr_mix)
+#     return x_hat
 
 
 x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
 
 loc, scale = inference_network(x)
 z = sample_z(loc, scale)
-params = generative_network(z)
-xs = sample_x(params)
+log_g, scale_g = generative_network(z)
 
+dist_g = tf.distributions.Normal(loc=loc_g, scale=scale_g)
 
-reconstruction_loss = nn.discretized_mix_logistic_loss(x, params, False)
+#xs = sample_x(params)
+
+reconstruction_loss = - dist_g.log_prob(x) # nn.discretized_mix_logistic_loss(x, params, False)
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
 loss = tf.reduce_mean(reconstruction_loss + latent_KL)
 loss = reconstruction_loss

@@ -17,7 +17,7 @@ tf.flags.DEFINE_string("data_set", default_value="celeba64", docstring="")
 
 FLAGS = tf.flags.FLAGS
 
-kernel_initializer = tf.random_normal_initializer(0, 0.0005)
+kernel_initializer = tf.random_normal_initializer(0, 0.05)
 
 # def generative_network(z, init=False, ema=None, dropout_p=0.0):
 #     counters = {}
@@ -66,7 +66,7 @@ def generative_network(z):
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 64x64
         net = tf.layers.conv2d_transpose(net, 3, 1, strides=1, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.nn.tanh(net)
+        net = tf.nn.tanh(net) * (1+1e-5)
     return net
 
 def inference_network(x):

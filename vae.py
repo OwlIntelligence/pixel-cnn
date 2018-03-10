@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import tensorflow as tf
+import time
 
 tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")
 tf.flags.DEFINE_integer("z_dim", default_value=50, docstring="latent dimension")
@@ -97,60 +98,63 @@ def sample_from_discretized_mix_logistic(l,nr_mix):
     return tf.concat([tf.reshape(x0,xs[:-1]+[1]), tf.reshape(x1,xs[:-1]+[1]), tf.reshape(x2,xs[:-1]+[1])],3)
 
 def generative_network(z):
-    net = tf.reshape(z, [FLAGS.batch_size, 1, 1, FLAGS.z_dim])
-    net = tf.layers.conv2d_transpose(net, 2048, 4, padding='VALID')
-    net = tf.layers.batch_normalization(net)
-    net = tf.nn.elu(net) # 4x4x2048
-    net = tf.layers.conv2d_transpose(net, 1024, 5, strides=2, padding='SAME')
-    net = tf.layers.batch_normalization(net)
-    net = tf.nn.elu(net) # 8x8x1024
-    net = tf.layers.conv2d_transpose(net, 512, 5, strides=2, padding='SAME')
-    net = tf.layers.batch_normalization(net)
-    net = tf.nn.elu(net) # 16x16x512
-    net = tf.layers.conv2d_transpose(net, 256, 5, strides=2, padding='SAME')
-    net = tf.layers.batch_normalization(net)
-    net = tf.nn.elu(net) # 32x32x256
-    net = tf.layers.conv2d_transpose(net, 128, 5, strides=2, padding='SAME')
-    net = tf.layers.batch_normalization(net)
-    net = tf.nn.elu(net) # 64x64x128
-    net = tf.layers.conv2d_transpose(net, FLAGS.nr_mix*10, 5, strides=2, padding='SAME') # 128x128x(10 nr_mix)
+    with tf.variable_scope("generative_network"):
+        net = tf.reshape(z, [FLAGS.batch_size, 1, 1, FLAGS.z_dim])
+        net = tf.layers.conv2d_transpose(net, 2048, 4, padding='VALID')
+        net = tf.layers.batch_normalization(net)
+        net = tf.nn.elu(net) # 4x4x2048
+        net = tf.layers.conv2d_transpose(net, 1024, 5, strides=2, padding='SAME')
+        net = tf.layers.batch_normalization(net)
+        net = tf.nn.elu(net) # 8x8x1024
+        net = tf.layers.conv2d_transpose(net, 512, 5, strides=2, padding='SAME')
+        net = tf.layers.batch_normalization(net)
+        net = tf.nn.elu(net) # 16x16x512
+        net = tf.layers.conv2d_transpose(net, 256, 5, strides=2, padding='SAME')
+        net = tf.layers.batch_normalization(net)
+        net = tf.nn.elu(net) # 32x32x256
+        net = tf.layers.conv2d_transpose(net, 128, 5, strides=2, padding='SAME')
+        net = tf.layers.batch_normalization(net)
+        net = tf.nn.elu(net) # 64x64x128
+        net = tf.layers.conv2d_transpose(net, FLAGS.nr_mix*10, 5, strides=2, padding='SAME') # 128x128x(10 nr_mix)
     return net
 
 def inference_network(x):
-    net = tf.reshape(x, [FLAGS.batch_size, 128, 128, 3]) # 128x128x3
-    net = tf.layers.conv2d(net, 128, 5, strides=2, padding='SAME')
-    net = tf.layers.batch_normalization(net)
-    net = tf.nn.elu(net) # 64x64x128
-    net = tf.layers.conv2d(net, 256, 5, strides=2, padding='SAME')
-    net = tf.layers.batch_normalization(net)
-    net = tf.nn.elu(net)
-    net = tf.layers.conv2d(net, 512, 5, strides=2, padding='SAME')
-    net = tf.layers.batch_normalization(net)
-    net = tf.nn.elu(net)
-    net = tf.layers.conv2d(net, 1024, 5, strides=2, padding='SAME')
-    net = tf.layers.batch_normalization(net)
-    net = tf.nn.elu(net)
-    net = tf.layers.conv2d(net, 2048, 5, strides=2, padding='SAME')
-    net = tf.layers.batch_normalization(net)
-    net = tf.nn.elu(net)
-    net = tf.layers.conv2d(net, FLAGS.z_dim, 4, padding='SAME')
-    net = tf.layers.batch_normalization(net)
-    net = tf.nn.elu(net)
-    net = tf.layers.dropout(net, 0.1)
-    net = tf.reshape(net, [FLAGS.batch_size, -1])
-    net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None)
-    loc = net[:, :FLAGS.z_dim]
-    scale = tf.nn.softplus(net[:, FLAGS.z_dim:])
+    with tf.variable_scope("inference_network"):
+        net = tf.reshape(x, [FLAGS.batch_size, 128, 128, 3]) # 128x128x3
+        net = tf.layers.conv2d(net, 128, 5, strides=2, padding='SAME')
+        net = tf.layers.batch_normalization(net)
+        net = tf.nn.elu(net) # 64x64x128
+        net = tf.layers.conv2d(net, 256, 5, strides=2, padding='SAME')
+        net = tf.layers.batch_normalization(net)
+        net = tf.nn.elu(net)
+        net = tf.layers.conv2d(net, 512, 5, strides=2, padding='SAME')
+        net = tf.layers.batch_normalization(net)
+        net = tf.nn.elu(net)
+        net = tf.layers.conv2d(net, 1024, 5, strides=2, padding='SAME')
+        net = tf.layers.batch_normalization(net)
+        net = tf.nn.elu(net)
+        net = tf.layers.conv2d(net, 2048, 5, strides=2, padding='SAME')
+        net = tf.layers.batch_normalization(net)
+        net = tf.nn.elu(net)
+        net = tf.layers.conv2d(net, FLAGS.z_dim, 4, padding='SAME')
+        net = tf.layers.batch_normalization(net)
+        net = tf.nn.elu(net)
+        net = tf.layers.dropout(net, 0.1)
+        net = tf.reshape(net, [FLAGS.batch_size, -1])
+        net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None)
+        loc = net[:, :FLAGS.z_dim]
+        scale = tf.nn.softplus(net[:, FLAGS.z_dim:])
     return loc, scale
 
 def sample_z(loc, scale):
-    dist = tf.distributions.Normal(loc=loc, scale=scale)
-    z = dist.sample()
+    with tf.variable_scope("sample_z"):
+        dist = tf.distributions.Normal(loc=loc, scale=scale)
+        z = dist.sample()
     return z
 
 def sample_x(params):
-    x = sample_from_discretized_mix_logistic(params, FLAGS.nr_mix)
-    return x
+    x_hat = sample_from_discretized_mix_logistic(params, FLAGS.nr_mix)
+    return x_hat
 
 
 x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 128, 128, 3))
@@ -159,8 +163,17 @@ z = sample_z(loc, scale)
 params = generative_network(z)
 
 reconstruction_loss = discretized_mix_logistic_loss(x, params, False)
-print(reconstruction_loss)
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
-print(latent_KL)
 loss = reconstruction_loss + latent_KL
-print(loss)
+
+train_step = tf.train.AdamOptimizer().minimize(loss)
+
+initializer = tf.global_variables_initializer()
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+with tf.Session(config=config) as sess:
+    sess.run(initializer)
+    for epoch in range(10):
+        feed_dict = {x: np.zeros((16,128,128,3))}
+        print(sess.run(train_step, feed_dict=feed_dict))

@@ -14,56 +14,80 @@ tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/Ce
 
 FLAGS = tf.flags.FLAGS
 
-
-def generative_network(z):
-    with tf.variable_scope("generative_network"):
+def generative_network(z, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
+    counters = {}
+    with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p):
         net = tf.reshape(z, [FLAGS.batch_size, 1, 1, FLAGS.z_dim])
-        net = tf.layers.conv2d_transpose(net, 2048, 4, padding='VALID', kernel_initializer=kernel_initializer)
-        net = tf.layers.batch_normalization(net)
-        net = tf.nn.elu(net) # 4x4x2048
-        net = tf.layers.conv2d_transpose(net, 1024, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.layers.batch_normalization(net)
-        net = tf.nn.elu(net) # 8x8x1024
-        net = tf.layers.conv2d_transpose(net, 512, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.layers.batch_normalization(net)
-        net = tf.nn.elu(net) # 16x16x512
-        net = tf.layers.conv2d_transpose(net, 256, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.layers.batch_normalization(net)
-        net = tf.nn.elu(net) # 32x32x256
-        net = tf.layers.conv2d_transpose(net, 128, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.layers.batch_normalization(net)
-        net = tf.nn.elu(net) # 64x64x128
-        net = tf.layers.conv2d_transpose(net, FLAGS.nr_mix*10, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer) # 128x128x(10 nr_mix)
-        net = nin(net, FLAGS.nr_mix*10)
-    return net
+        net = nn.deconv2d(net, 512, filter_size=[4.4], stride=[1,1], pad='VALID')
+        net = nn.deconv2d(net, 256, filter_size=[5,5], stride=[2,2], pad='SAME')
+        net = nn.deconv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME')
+        net = nn.deconv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME')
+        net = nn.nin(tf.nn.elu(net), 10*nr_logistic_mix)
+        return net
 
-def inference_network(x):
-    with tf.variable_scope("inference_network"):
-        net = tf.reshape(x, [FLAGS.batch_size, 128, 128, 3]) # 128x128x3
-        net = tf.layers.conv2d(net, 128, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.layers.batch_normalization(net)
-        net = tf.nn.elu(net) # 64x64x128
-        net = tf.layers.conv2d(net, 256, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.layers.batch_normalization(net)
-        net = tf.nn.elu(net)
-        net = tf.layers.conv2d(net, 512, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.layers.batch_normalization(net)
-        net = tf.nn.elu(net)
-        net = tf.layers.conv2d(net, 1024, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.layers.batch_normalization(net)
-        net = tf.nn.elu(net)
-        net = tf.layers.conv2d(net, 2048, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.layers.batch_normalization(net)
-        net = tf.nn.elu(net)
-        net = tf.layers.conv2d(net, FLAGS.z_dim, 4, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.layers.batch_normalization(net)
-        net = tf.nn.elu(net)
-        #net = tf.layers.dropout(net, 0.1)
+def inference_network(x, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
+    counters = {}
+    with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p):
+        net = tf.reshape(x, [FLAGS.batch_size, 32, 32, 3])
+        net = nn.conv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME')
+        net = nn.conv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME')
+        net = nn.conv2d(net, 256, filter_size=[5,5], stride=[2,2], pad='SAME')
+        net = nn.conv2d(net, 512, filter_size=[4,4], stride=[1,1], pad='VALID')
         net = tf.reshape(net, [FLAGS.batch_size, -1])
-        net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None, kernel_initializer=kernel_initializer)
+        net = nn.dense(net, FLAGS.z_dim * 2)
         loc = net[:, :FLAGS.z_dim]
         scale = tf.nn.softplus(net[:, FLAGS.z_dim:])
-    return loc, scale
+        return loc, scale
+
+# def generative_network(z):
+#     with tf.variable_scope("generative_network"):
+#         net = tf.reshape(z, [FLAGS.batch_size, 1, 1, FLAGS.z_dim])
+#         net = tf.layers.conv2d_transpose(net, 2048, 4, padding='VALID', kernel_initializer=kernel_initializer)
+#         net = tf.layers.batch_normalization(net)
+#         net = tf.nn.elu(net) # 4x4x2048
+#         net = tf.layers.conv2d_transpose(net, 1024, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
+#         net = tf.layers.batch_normalization(net)
+#         net = tf.nn.elu(net) # 8x8x1024
+#         net = tf.layers.conv2d_transpose(net, 512, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
+#         net = tf.layers.batch_normalization(net)
+#         net = tf.nn.elu(net) # 16x16x512
+#         net = tf.layers.conv2d_transpose(net, 256, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
+#         net = tf.layers.batch_normalization(net)
+#         net = tf.nn.elu(net) # 32x32x256
+#         net = tf.layers.conv2d_transpose(net, 128, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
+#         net = tf.layers.batch_normalization(net)
+#         net = tf.nn.elu(net) # 64x64x128
+#         net = tf.layers.conv2d_transpose(net, FLAGS.nr_mix*10, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer) # 128x128x(10 nr_mix)
+#         net = nin(net, FLAGS.nr_mix*10)
+#     return net
+#
+# def inference_network(x):
+#     with tf.variable_scope("inference_network"):
+#         net = tf.reshape(x, [FLAGS.batch_size, 128, 128, 3]) # 128x128x3
+#         net = tf.layers.conv2d(net, 128, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
+#         net = tf.layers.batch_normalization(net)
+#         net = tf.nn.elu(net) # 64x64x128
+#         net = tf.layers.conv2d(net, 256, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
+#         net = tf.layers.batch_normalization(net)
+#         net = tf.nn.elu(net)
+#         net = tf.layers.conv2d(net, 512, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
+#         net = tf.layers.batch_normalization(net)
+#         net = tf.nn.elu(net)
+#         net = tf.layers.conv2d(net, 1024, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
+#         net = tf.layers.batch_normalization(net)
+#         net = tf.nn.elu(net)
+#         net = tf.layers.conv2d(net, 2048, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
+#         net = tf.layers.batch_normalization(net)
+#         net = tf.nn.elu(net)
+#         net = tf.layers.conv2d(net, FLAGS.z_dim, 4, padding='SAME', kernel_initializer=kernel_initializer)
+#         net = tf.layers.batch_normalization(net)
+#         net = tf.nn.elu(net)
+#         #net = tf.layers.dropout(net, 0.1)
+#         net = tf.reshape(net, [FLAGS.batch_size, -1])
+#         net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None, kernel_initializer=kernel_initializer)
+#         loc = net[:, :FLAGS.z_dim]
+#         scale = tf.nn.softplus(net[:, FLAGS.z_dim:])
+#     return loc, scale
 
 def sample_z(loc, scale):
     with tf.variable_scope("sample_z"):
@@ -72,7 +96,7 @@ def sample_z(loc, scale):
     return z
 
 def sample_x(params):
-    x_hat = sample_from_discretized_mix_logistic(params, FLAGS.nr_mix)
+    x_hat = nn.sample_from_discretized_mix_logistic(params, FLAGS.nr_mix)
     return x_hat
 
 
@@ -82,7 +106,7 @@ z = sample_z(loc, scale)
 params = generative_network(z)
 xs = sample_x(params)
 
-reconstruction_loss = discretized_mix_logistic_loss(x, params, False)
+reconstruction_loss = nn.discretized_mix_logistic_loss(x, params, False)
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
 loss = tf.reduce_mean(reconstruction_loss + latent_KL)
 

@@ -13,6 +13,8 @@ tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/Ce
 
 FLAGS = tf.flags.FLAGS
 
+kernel_initializer = tf.random_normal_initializer(0, 0.05)
+
 def int_shape(x):
     return list(map(int, x.get_shape()))
 
@@ -34,7 +36,12 @@ def log_prob_from_logits(x):
     m = tf.reduce_max(x, axis, keep_dims=True)
     return x - m - tf.log(tf.reduce_sum(tf.exp(x-m), axis, keep_dims=True))
 
-kernel_initializer = tf.random_normal_initializer(0, 0.05)
+def nin(x, num_units):
+    s = int_shape(x)
+    x = tf.reshape(x, [np.prod(s[:-1]),s[-1]])
+    x = tf.layers.dense(x, num_units, kernel_initializer)
+    return tf.reshape(x, s[:-1]+[num_units])
+
 
 def discretized_mix_logistic_loss(x,l,sum_all=True):
     """ log-likelihood for mixture of discretized logistics, assumes the data has been rescaled to [-1,1] interval """
@@ -74,8 +81,6 @@ def discretized_mix_logistic_loss(x,l,sum_all=True):
     log_probs = tf.where(x < -0.999, log_cdf_plus, tf.where(x > 0.999, log_one_minus_cdf_min, tf.where(cdf_delta > 1e-5, tf.log(tf.maximum(cdf_delta, 1e-12)), log_pdf_mid - np.log(127.5))))
 
     log_probs = tf.reduce_sum(log_probs,3) + log_prob_from_logits(logit_probs)
-    print(log_probs)
-    quit()
     if sum_all:
         return -tf.reduce_sum(log_sum_exp(log_probs))
     else:
@@ -123,6 +128,7 @@ def generative_network(z):
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 64x64x128
         net = tf.layers.conv2d_transpose(net, FLAGS.nr_mix*10, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer) # 128x128x(10 nr_mix)
+        net = nin(net, FLAGS.nr_mix*10)
     return net
 
 def inference_network(x):
@@ -146,7 +152,7 @@ def inference_network(x):
         net = tf.layers.conv2d(net, FLAGS.z_dim, 4, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net)
-        net = tf.layers.dropout(net, 0.1)
+        #net = tf.layers.dropout(net, 0.1)
         net = tf.reshape(net, [FLAGS.batch_size, -1])
         net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None, kernel_initializer=kernel_initializer)
         loc = net[:, :FLAGS.z_dim]
@@ -190,3 +196,4 @@ with tf.Session(config=config) as sess:
         feed_dict = {x: data}
         l = sess.run([params, train_step], feed_dict=feed_dict)
         print(l)
+        

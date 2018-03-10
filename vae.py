@@ -164,7 +164,7 @@ params = generative_network(z)
 
 reconstruction_loss = discretized_mix_logistic_loss(x, params, False)
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
-loss = reconstruction_loss + latent_KL
+loss = tf.reduce_mean(reconstruction_loss + latent_KL)
 
 train_step = tf.train.AdamOptimizer().minimize(loss)
 
@@ -175,6 +175,6 @@ config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
     sess.run(initializer)
     for epoch in range(10):
-        feed_dict = {x: np.zeros((16,128,128,3))}
+        feed_dict = {x: np.random.uniform(-1., 1., size=(16,128,128,3))}
         l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
         print(l)

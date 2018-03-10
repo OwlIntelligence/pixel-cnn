@@ -18,7 +18,7 @@ def generative_network(z, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_f
     counters = {}
     with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p):
         net = tf.reshape(z, [FLAGS.batch_size, 1, 1, FLAGS.z_dim])
-        net = nn.deconv2d(net, 512, filter_size=[4.4], stride=[1,1], pad='VALID')
+        net = nn.deconv2d(net, 512, filter_size=[4,4], stride=[1,1], pad='VALID')
         net = nn.deconv2d(net, 256, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME')

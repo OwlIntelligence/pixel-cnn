@@ -120,7 +120,7 @@ train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=64)
 test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
 
 config = tf.ConfigProto()
@@ -160,4 +160,4 @@ with tf.Session(config=config) as sess:
 
             img_tile = plotting.img_tile(sample_x[:25], aspect_ratio=1.0, border_color=1.0, stretch=True)
             img = plotting.plot_img(img_tile, title=FLAGS.data_set + ' samples')
-            plotting.plt.savefig(os.path.join(FLAGS.save_dir,'%s_sample%d.png' % (FLAGS.data_set, epoch)))
+            plotting.plt.savefig(os.path.join(FLAGS.save_dir,'%s_vae_sample%d.png' % (FLAGS.data_set, epoch)))

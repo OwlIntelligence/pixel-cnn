@@ -54,7 +54,7 @@ def discretized_mix_logistic_loss(x,l,sum_all=True, masks=None):
     means = l[:,:,:,:,:nr_mix]
     log_scales = tf.maximum(l[:,:,:,:,nr_mix:2*nr_mix], -7.)
     coeffs = tf.nn.tanh(l[:,:,:,:,2*nr_mix:3*nr_mix])
-    return means, log_scales, coeffs
+
     x = tf.reshape(x, xs + [1]) + tf.zeros(xs + [nr_mix]) # here and below: getting the means and adjusting them based on preceding sub-pixels
     m2 = tf.reshape(means[:,:,:,1,:] + coeffs[:, :, :, 0, :] * x[:, :, :, 0, :], [xs[0],xs[1],xs[2],1,nr_mix])
     m3 = tf.reshape(means[:, :, :, 2, :] + coeffs[:, :, :, 1, :] * x[:, :, :, 0, :] + coeffs[:, :, :, 2, :] * x[:, :, :, 1, :], [xs[0],xs[1],xs[2],1,nr_mix])
@@ -82,6 +82,7 @@ def discretized_mix_logistic_loss(x,l,sum_all=True, masks=None):
     # the 1e-12 in tf.maximum(cdf_delta, 1e-12) is never actually used as output, it's purely there to get around the tf.select() gradient issue
     # if the probability on a sub-pixel is below 1e-5, we use an approximation based on the assumption that the log-density is constant in the bin of the observed sub-pixel value
     log_probs = tf.where(x < -0.999, log_cdf_plus, tf.where(x > 0.999, log_one_minus_cdf_min, tf.where(cdf_delta > 1e-5, tf.log(tf.maximum(cdf_delta, 1e-12)), log_pdf_mid - np.log(127.5))))
+    return log_probs[:, :, :, 0, :]
     log_probs = tf.reduce_sum(log_probs,3) + log_prob_from_logits(logit_probs)
 
     lse = log_sum_exp(log_probs)

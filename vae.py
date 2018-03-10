@@ -23,7 +23,7 @@ def generative_network(z, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_f
         net = nn.deconv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 32, filter_size=[5,5], stride=[2,2], pad='SAME')
-        net = nn.deconv2d(net, 6, filter_size=[1,1], stride=[1,1], pad='SAME')
+        net = nn.deconv2d(net, 10*FLAGS.nr_mix, filter_size=[1,1], stride=[1,1], pad='SAME')
         return net
 
 def inference_network(x, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
@@ -112,7 +112,7 @@ xs = sample_x(params)
 reconstruction_loss = nn.discretized_mix_logistic_loss(x, params, False)
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
 loss = tf.reduce_mean(reconstruction_loss + latent_KL)
-loss = reconstruction_loss 
+loss = reconstruction_loss
 
 #train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
 

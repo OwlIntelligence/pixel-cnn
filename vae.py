@@ -153,7 +153,9 @@ with tf.Session(config=config) as sess:
 
             data = next(test_data)
             feed_dict = {x: data}
-            reconst, = sess.run([x_hat], feed_dict=feed_dict)
+            sample_x, = sess.run([x_hat], feed_dict=feed_dict)
             test_data.reset()
 
-            print(reconst.shape)
+            img_tile = plotting.img_tile(sample_x[:25], aspect_ratio=1.0, border_color=1.0, stretch=True)
+            img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
+            plotting.plt.savefig(os.path.join(FLAGS.save_dir,'%s_sample%d.png' % (args.data_set, epoch)))

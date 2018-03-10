@@ -174,7 +174,7 @@ train_step = tf.train.AdamOptimizer().minimize(loss)
 initializer = tf.global_variables_initializer()
 
 
-train_data = celeba_data.DataLoader(args.data_dir, 'valid', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=128)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

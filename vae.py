@@ -9,7 +9,7 @@ from utils import plotting
 
 
 #tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")
-tf.flags.DEFINE_integer("z_dim", default_value=500, docstring="latent dimension")
+tf.flags.DEFINE_integer("z_dim", default_value=200, docstring="latent dimension")
 tf.flags.DEFINE_integer("batch_size", default_value=50, docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")

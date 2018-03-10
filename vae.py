@@ -106,15 +106,15 @@ inf_net = tf.make_template('inf_net', inference_network)
 
 x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
 
-# run once for data dependent initialization of parameters
-inf_init_pass = inf_net(x, init=True, **model_opt)
-#gen_init_pass = gen_net(z, init=True, **model_opt)
-
-
 loc, scale = inference_network(x)
 z = sample_z(loc, scale)
 params = generative_network(z)
 xs = sample_x(params)
+
+# run once for data dependent initialization of parameters
+inf_init_pass = inf_net(x, init=True, **model_opt)
+gen_init_pass = gen_net(z, init=True, **model_opt)
+
 
 reconstruction_loss = nn.discretized_mix_logistic_loss(x, params, False)
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
@@ -133,7 +133,7 @@ with tf.Session(config=config) as sess:
     # init
     sess.run(initializer)
     feed_dict = {x: next(train_data)}
-    output = sess.run(inf_init_pass, feed_dict=feed_dict)
+    output = sess.run([inf_init_pass, gen_init_pass], feed_dict=feed_dict)
     print(output)
 
     num_epoch = 100

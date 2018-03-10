@@ -39,7 +39,7 @@ def log_prob_from_logits(x):
 def nin(x, num_units):
     s = int_shape(x)
     x = tf.reshape(x, [np.prod(s[:-1]),s[-1]])
-    x = tf.layers.dense(x, num_units, kernel_initializer)
+    x = tf.layers.dense(x, num_units, kernel_initializer=kernel_initializer)
     return tf.reshape(x, s[:-1]+[num_units])
 
 
@@ -196,4 +196,3 @@ with tf.Session(config=config) as sess:
         feed_dict = {x: data}
         l = sess.run([params, train_step], feed_dict=feed_dict)
         print(l)
-        

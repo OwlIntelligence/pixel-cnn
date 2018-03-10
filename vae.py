@@ -7,8 +7,8 @@ from tensorflow.contrib.framework.python.ops import arg_scope
 import pixel_cnn_pp.nn as nn
 
 
-tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")
-tf.flags.DEFINE_integer("z_dim", default_value=100, docstring="latent dimension")
+#tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")
+tf.flags.DEFINE_integer("z_dim", default_value=500, docstring="latent dimension")
 tf.flags.DEFINE_integer("batch_size", default_value=50, docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 
@@ -107,14 +107,7 @@ x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
 loc, scale = inference_network(x)
 z = sample_z(loc, scale)
 x_hat = generative_network(z)
-# loc_g, scale_g = generative_network(z)
-#
-# dist_g = tf.distributions.Normal(loc=loc_g, scale=scale_g)
-#
-# #xs = sample_x(params)
-#
-# reconstruction_loss = - tf.reduce_sum(dist_g.log_prob(x), [1,2,3]) # nn.discretized_mix_logistic_loss(x, params, False)
-#
+
 reconstruction_loss = tf.reduce_mean(tf.square(x_hat - x), [1,2,3])
 
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
@@ -135,14 +128,12 @@ with tf.Session(config=config) as sess:
 
     num_epoch = 100
     for i in range(num_epoch):
-        loss_epoch = 0.
-        count = 0
+        loss_epoch = []
         print(i, "----------")
         for data in train_data:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
             feed_dict = {x: data}
             l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
-            loss_epoch += l
-            count += 1
-        loss_epoch /= count
-        print(loss_epoch)
+            loss_epoch.append(l)
+        l = np.mean(loss_epoch)
+        print("loss", l)

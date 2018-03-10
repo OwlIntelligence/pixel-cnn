@@ -100,8 +100,16 @@ def sample_x(params):
     x_hat = nn.sample_from_discretized_mix_logistic(params, FLAGS.nr_mix)
     return x_hat
 
+model_opt = {}
+gen_net = tf.make_template('gen_net', generative_network)
+inf_net = tf.make_template('inf_net', inference_network)
 
 x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
+
+# run once for data dependent initialization of parameters
+init_pass = model(x_init, gh_init, sh_init, init=True, dropout_p=args.dropout_p, **model_opt)
+
+
 loc, scale = inference_network(x)
 z = sample_z(loc, scale)
 params = generative_network(z)
@@ -116,17 +124,22 @@ train_step = tf.train.AdamOptimizer().minimize(loss)
 initializer = tf.global_variables_initializer()
 
 
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=64)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
     sess.run(initializer)
-    num_epoch = 5
+    num_epoch = 100
     for i in range(num_epoch):
+        loss_epoch = 0.
+        count = 0
         print(i, "----------")
         for data in train_data:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
             feed_dict = {x: data}
-            l = sess.run([loss, train_step], feed_dict=feed_dict)
-            print(l)
+            l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
+            loss_epoch += l
+            count += 1
+        loss_epoch /= count
+        print(loss_epoch)

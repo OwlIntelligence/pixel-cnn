@@ -54,6 +54,7 @@ def discretized_mix_logistic_loss(x,l,sum_all=True, masks=None):
     means = l[:,:,:,:,:nr_mix]
     log_scales = tf.maximum(l[:,:,:,:,nr_mix:2*nr_mix], -7.)
     coeffs = tf.nn.tanh(l[:,:,:,:,2*nr_mix:3*nr_mix])
+    return means, log_scales, coeffs
     x = tf.reshape(x, xs + [1]) + tf.zeros(xs + [nr_mix]) # here and below: getting the means and adjusting them based on preceding sub-pixels
     m2 = tf.reshape(means[:,:,:,1,:] + coeffs[:, :, :, 0, :] * x[:, :, :, 0, :], [xs[0],xs[1],xs[2],1,nr_mix])
     m3 = tf.reshape(means[:, :, :, 2, :] + coeffs[:, :, :, 1, :] * x[:, :, :, 0, :] + coeffs[:, :, :, 2, :] * x[:, :, :, 1, :], [xs[0],xs[1],xs[2],1,nr_mix])
@@ -84,7 +85,7 @@ def discretized_mix_logistic_loss(x,l,sum_all=True, masks=None):
     log_probs = tf.reduce_sum(log_probs,3) + log_prob_from_logits(logit_probs)
 
     lse = log_sum_exp(log_probs)
-    return lse
+
     if masks is not None:
         assert lse.shape==masks.shape, "shape of masks does not match the log_sum_exp outputs"
         lse *= (1 - masks)

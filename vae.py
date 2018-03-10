@@ -108,7 +108,7 @@ x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
 
 # run once for data dependent initialization of parameters
 inf_init_pass = inf_net(x, init=True, **model_opt)
-gen_init_pass = gen_net(z, init=True, **model_opt)
+#gen_init_pass = gen_net(z, init=True, **model_opt)
 
 
 loc, scale = inference_network(x)

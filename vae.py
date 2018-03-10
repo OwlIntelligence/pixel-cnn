@@ -2,6 +2,9 @@ import numpy as np
 import os
 import tensorflow as tf
 import time
+import data.celeba_data as celeba_data
+
+
 
 tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")
 tf.flags.DEFINE_integer("z_dim", default_value=50, docstring="latent dimension")
@@ -170,11 +173,14 @@ train_step = tf.train.AdamOptimizer().minimize(loss)
 
 initializer = tf.global_variables_initializer()
 
+
+train_data = celeba_data.DataLoader(args.data_dir, 'valid', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
+
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
     sess.run(initializer)
-    for epoch in range(10):
-        feed_dict = {x: np.random.uniform(-1., 1., size=(16,128,128,3))}
+    for data in train_data:
+        feed_dict = {x: data}
         l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
         print(l)

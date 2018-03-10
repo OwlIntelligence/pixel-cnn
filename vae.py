@@ -100,14 +100,15 @@ def sample_x(params):
     x_hat = nn.sample_from_discretized_mix_logistic(params, FLAGS.nr_mix)
     return x_hat
 
-# model_opt = {}
-# gen_net = tf.make_template('gen_net', generative_network)
-# inf_net = tf.make_template('inf_net', inference_network)
+model_opt = {}
+gen_net = tf.make_template('gen_net', generative_network)
+inf_net = tf.make_template('inf_net', inference_network)
 
 x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
 
 # run once for data dependent initialization of parameters
-#init_pass = model(x_init, gh_init, sh_init, init=True, **model_opt)
+inf_init_pass = inf_net(x, init=True, **model_opt)
+gen_init_pass = gen_net(z, init=True, **model_opt)
 
 
 loc, scale = inference_network(x)
@@ -129,7 +130,12 @@ train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, s
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
+    # init
     sess.run(initializer)
+    feed_dict = {x: next(train_data)}
+    output = sess.run(inf_init_pass, feed_dict=feed_dict)
+    print(output)
+
     num_epoch = 100
     for i in range(num_epoch):
         loss_epoch = 0.

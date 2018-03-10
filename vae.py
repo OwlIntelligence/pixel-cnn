@@ -14,6 +14,8 @@ tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/Ce
 
 FLAGS = tf.flags.FLAGS
 
+kernel_initializer = tf.random_normal_initializer(0, 0.05)
+
 # def generative_network(z, init=False, ema=None, dropout_p=0.0):
 #     counters = {}
 #     with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p, nonlinearity=tf.nn.elu):

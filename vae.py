@@ -11,6 +11,7 @@ import pixel_cnn_pp.nn as nn
 tf.flags.DEFINE_integer("z_dim", default_value=500, docstring="latent dimension")
 tf.flags.DEFINE_integer("batch_size", default_value=50, docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
+tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")
 
 FLAGS = tf.flags.FLAGS
 
@@ -115,7 +116,7 @@ loss = tf.reduce_mean(reconstruction_loss + latent_KL)
 train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
 
 initializer = tf.global_variables_initializer()
-
+saver = tf.train.Saver()
 
 train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
 test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
@@ -147,3 +148,6 @@ with tf.Session(config=config) as sess:
         test_loss_epoch = np.mean(test_loss_epoch)
 
         print("train loss:", train_loss_epoch, " test loss:", test_loss_epoch)
+
+        if i%10==0:
+            saver.save(sess, FLAGS.save_dir + '/params_' + 'celeba' + '.ckpt')

@@ -23,10 +23,8 @@ def generative_network(z, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_f
         net = nn.deconv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 32, filter_size=[5,5], stride=[2,2], pad='SAME')
-        #loc = nn.deconv2d(net, 3, filter_size=[1,1], stride=[1,1], pad='SAME', nonlinearity=tf.nn.tanh)
-        #scale = nn.deconv2d(net, 3, filter_size=[1,1], stride=[1,1], pad='SAME', nonlinearity=tf.nn.softplus)
-        net = nn.deconv2d(net, 3*256, filter_size=[1,1], stride=[1,1], pad='SAME', nonlinearity=tf.nn.tanh)
-        return netw 
+        net = nn.deconv2d(net, 3, filter_size=[1,1], stride=[1,1], pad='SAME', nonlinearity=tf.nn.tanh)
+        return net
 
 def inference_network(x, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
     counters = {}
@@ -108,7 +106,7 @@ x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
 
 loc, scale = inference_network(x)
 z = sample_z(loc, scale)
-params = generative_network(z)
+x_hat = generative_network(z)
 # loc_g, scale_g = generative_network(z)
 #
 # dist_g = tf.distributions.Normal(loc=loc_g, scale=scale_g)
@@ -117,7 +115,7 @@ params = generative_network(z)
 #
 # reconstruction_loss = - tf.reduce_sum(dist_g.log_prob(x), [1,2,3]) # nn.discretized_mix_logistic_loss(x, params, False)
 #
-reconstruction_loss = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=params, labels=x), [1,2,3])
+reconstruction_loss = tf.reduce_mean(tf.square(x_hat - x), [1,2,3])
 
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
 loss = tf.reduce_mean(reconstruction_loss + latent_KL)
@@ -143,8 +141,6 @@ with tf.Session(config=config) as sess:
         for data in train_data:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
             feed_dict = {x: data}
-            #x_sample = sess.run(xs, feed_dict=feed_dict)
-
             l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
             loss_epoch += l
             count += 1

@@ -97,7 +97,7 @@ def sample_from_discretized_mix_logistic(l,nr_mix):
     return tf.concat([tf.reshape(x0,xs[:-1]+[1]), tf.reshape(x1,xs[:-1]+[1]), tf.reshape(x2,xs[:-1]+[1])],3)
 
 def generative_network(z):
-    net = tf.reshape(z, [FLAGS.batch_size, 1, 1, FLAGS.z_zim])
+    net = tf.reshape(z, [FLAGS.batch_size, 1, 1, FLAGS.z_dim])
     net = tf.layers.conv2d_transpose(net, 2048, 4, padding='VALID')
     net = tf.layers.batch_normalization(net)
     net = tf.nn.elu(net) # 4x4x2048

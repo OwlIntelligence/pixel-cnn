@@ -100,9 +100,6 @@ def sample_x(params):
     x_hat = nn.sample_from_discretized_mix_logistic(params, FLAGS.nr_mix)
     return x_hat
 
-model_opt = {}
-gen_net = tf.make_template('gen_net', generative_network)
-inf_net = tf.make_template('inf_net', inference_network)
 
 x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
 
@@ -110,10 +107,6 @@ loc, scale = inference_network(x)
 z = sample_z(loc, scale)
 params = generative_network(z)
 xs = sample_x(params)
-
-# run once for data dependent initialization of parameters
-inf_init_pass = inf_net(x, init=True, **model_opt)
-gen_init_pass = gen_net(z, init=True, **model_opt)
 
 
 reconstruction_loss = nn.discretized_mix_logistic_loss(x, params, False)
@@ -132,10 +125,6 @@ config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
     # init
     sess.run(initializer)
-    d = next(train_data)
-    d = np.cast[np.float32]((d - 127.5) / 127.5)
-    feed_dict = {x: d}
-    output = sess.run([inf_init_pass, gen_init_pass], feed_dict=feed_dict)
 
     num_epoch = 100
     for i in range(num_epoch):
@@ -145,6 +134,11 @@ with tf.Session(config=config) as sess:
         for data in train_data:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
             feed_dict = {x: data}
+            print(sess(params, feed_dict=feed_dict))
+            quit()
+
+
+
             l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
             loss_epoch += l
             count += 1

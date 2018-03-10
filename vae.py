@@ -100,9 +100,9 @@ def sample_x(params):
     x_hat = nn.sample_from_discretized_mix_logistic(params, FLAGS.nr_mix)
     return x_hat
 
-#model_opt = {}
-#gen_net = tf.make_template('gen_net', generative_network)
-#inf_net = tf.make_template('inf_net', inference_network)
+# model_opt = {}
+# gen_net = tf.make_template('gen_net', generative_network)
+# inf_net = tf.make_template('inf_net', inference_network)
 
 x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
 
@@ -119,7 +119,7 @@ reconstruction_loss = nn.discretized_mix_logistic_loss(x, params, False)
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
 loss = tf.reduce_mean(reconstruction_loss + latent_KL)
 
-train_step = tf.train.GradientDescentOptimizer(0.1).minimize(loss)
+train_step = tf.train.AdamOptimizer(0.01).minimize(loss)
 
 initializer = tf.global_variables_initializer()
 

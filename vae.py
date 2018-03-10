@@ -63,6 +63,7 @@ def generative_network(z):
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 64x64
         net = tf.layers.conv2d_transpose(net, 3, 1, strides=1, padding='SAME', kernel_initializer=kernel_initializer)
+        net = tf.nn.tanh(net)
     return net
 
 def inference_network(x):

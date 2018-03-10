@@ -120,8 +120,8 @@ train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=64)
-test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
+test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=False, size=64)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

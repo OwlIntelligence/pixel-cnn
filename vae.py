@@ -26,7 +26,7 @@ def generative_network(z, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_f
         net = nn.deconv2d(net, 10*nr_logistic_mix, filter_size=[1,1], stride=[1,1], pad='SAME')
         return net
 
-def inference_network(x, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
+def inference_network(x, init=False, ema=None, dropout_p=0.0, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
     counters = {}
     with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p):
         net = tf.reshape(x, [FLAGS.batch_size, 64, 64, 3])
@@ -134,9 +134,8 @@ with tf.Session(config=config) as sess:
         for data in train_data:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
             feed_dict = {x: data}
-            print(sess.run(params, feed_dict=feed_dict))
+            print(sess.run(reconstruction_loss, feed_dict=feed_dict))
             quit()
-
 
 
             l, _ = sess.run([loss, train_step], feed_dict=feed_dict)

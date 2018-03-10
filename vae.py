@@ -22,13 +22,15 @@ def generative_network(z, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_f
         net = nn.deconv2d(net, 256, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME')
+        net = nn.deconv2d(net, 32, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.deconv2d(net, 10*nr_logistic_mix, filter_size=[1,1], stride=[1,1], pad='SAME')
         return net
 
 def inference_network(x, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_filters=160, nr_logistic_mix=10):
     counters = {}
     with arg_scope([nn.conv2d, nn.deconv2d, nn.dense], counters=counters, init=init, ema=ema, dropout_p=dropout_p):
-        net = tf.reshape(x, [FLAGS.batch_size, 32, 32, 3])
+        net = tf.reshape(x, [FLAGS.batch_size, 64, 64, 3])
+        net = nn.conv2d(net, 32, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.conv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.conv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME')
         net = nn.conv2d(net, 256, filter_size=[5,5], stride=[2,2], pad='SAME')
@@ -99,7 +101,7 @@ def sample_x(params):
     return x_hat
 
 
-x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 32, 32, 3))
+x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
 loc, scale = inference_network(x)
 z = sample_z(loc, scale)
 params = generative_network(z)
@@ -114,7 +116,7 @@ train_step = tf.train.AdamOptimizer().minimize(loss)
 initializer = tf.global_variables_initializer()
 
 
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=32)
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

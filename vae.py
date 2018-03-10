@@ -153,7 +153,7 @@ with tf.Session(config=config) as sess:
 
             data = next(test_data)
             feed_dict = {x: data}
-            reconst = sess.run([x_hat], feed_dict=feed_dict)
+            reconst, = sess.run([x_hat], feed_dict=feed_dict)
             test_data.reset()
 
             print(reconst.shape)

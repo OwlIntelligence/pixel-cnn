@@ -90,7 +90,9 @@ def inference_network(x):
         net = tf.reshape(net, [FLAGS.batch_size, -1])
         net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None, kernel_initializer=kernel_initializer)
         loc = net[:, :FLAGS.z_dim]
-        scale = tf.nn.softplus(net[:, FLAGS.z_dim:])
+        # scale = tf.nn.softplus(net[:, FLAGS.z_dim:])
+        log_scale = net[:, FLAGS.z_dim:]
+        scale = tf.exp(log_scale)
     return loc, scale
 
 def sample_z(loc, scale):
@@ -122,7 +124,7 @@ train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=64)
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
 test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=False, size=64)
 
 config = tf.ConfigProto()
@@ -130,11 +132,6 @@ config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
     # init
     sess.run(initializer)
-    for k in range(2):
-        for data in test_data:
-            data = np.cast[np.float32]((data - 127.5) / 127.5)
-            feed_dict = {x: data}
-            l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
 
     max_num_epoch = 1000
     for epoch in range(max_num_epoch):
@@ -144,7 +141,7 @@ with tf.Session(config=config) as sess:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
             feed_dict = {x: data}
             l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
-            print(l)
+
             train_loss_epoch.append(l)
         train_loss_epoch = np.mean(train_loss_epoch)
 

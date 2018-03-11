@@ -117,7 +117,7 @@ reconstruction_loss = tf.reduce_mean(tf.square(x_hat - x), [1,2,3])
 latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
 
 
-loss = tf.reduce_mean(latent_KL)
+loss = tf.reduce_mean(reconstruction_loss+latent_KL)
 
 train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
 

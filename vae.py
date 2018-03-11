@@ -142,7 +142,6 @@ with tf.Session(config=config) as sess:
             data = np.cast[np.float32]((data - 127.5) / 127.5)
             feed_dict = {x: data}
             l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
-            print(l)
             train_loss_epoch.append(l)
         train_loss_epoch = np.mean(train_loss_epoch)
 

@@ -90,9 +90,9 @@ def inference_network(x):
         net = tf.reshape(net, [FLAGS.batch_size, -1])
         net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None, kernel_initializer=kernel_initializer)
         loc = net[:, :FLAGS.z_dim]
-        # scale = tf.nn.softplus(net[:, FLAGS.z_dim:])
-        log_scale = net[:, FLAGS.z_dim:]
-        scale = tf.exp(log_scale)
+        scale = tf.nn.softplus(net[:, FLAGS.z_dim:])
+        #log_scale = net[:, FLAGS.z_dim:]
+        #scale = tf.exp(log_scale)
     return loc, scale
 
 def sample_z(loc, scale):

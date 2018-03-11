@@ -114,8 +114,9 @@ x_hat = generative_network(z)
 
 reconstruction_loss = tf.reduce_mean(tf.square(x_hat - x), [1,2,3])
 
-latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
-
+# latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
+prior_scale = 2.
+latent_KL = 0.5 * tf.reduce_sum((tf.square(loc) + tf.square(scale))/prior_scale**2 - tf.log(tf.square(scale/prior_scale)) - 1,1)
 
 loss = tf.reduce_mean(reconstruction_loss+latent_KL)
 

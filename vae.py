@@ -114,8 +114,8 @@ z = sample_z(loc, scale)
 x_hat = generative_network(z)
 
 #reconstruction_loss = tf.reduce_mean(tf.square(x_hat - x), [1,2,3])
-
-reconstruction_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=x, logits=x_hat), [1,2,3])
+flatten = tf.contrib.layers.flatten
+reconstruction_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=flatten(x), logits=flatten(x_hat))
 
 # latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
 prior_scale = 1.

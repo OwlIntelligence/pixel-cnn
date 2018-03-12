@@ -66,7 +66,7 @@ def generative_network(z):
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 64x64
         net = tf.layers.conv2d_transpose(net, 3, 1, strides=1, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.nn.tanh(net) * (1+1e-5)
+        net = tf.nn.sigmoid(net)
     return net
 
 def inference_network(x):
@@ -90,7 +90,8 @@ def inference_network(x):
         net = tf.reshape(net, [FLAGS.batch_size, -1])
         net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None, kernel_initializer=kernel_initializer)
         loc = net[:, :FLAGS.z_dim]
-        scale = tf.nn.softplus(net[:, FLAGS.z_dim:])
+        log_var = net[:, FLAGS.z_dim:]
+        scale = tf.sqrt(tf.exp(log_var)+1e-5)
         #log_scale = net[:, FLAGS.z_dim:]
         #scale = tf.exp(log_scale)
     return loc, scale
@@ -112,10 +113,12 @@ loc, scale = inference_network(x)
 z = sample_z(loc, scale)
 x_hat = generative_network(z)
 
-reconstruction_loss = tf.reduce_mean(tf.square(x_hat - x), [1,2,3])
+#reconstruction_loss = tf.reduce_mean(tf.square(x_hat - x), [1,2,3])
+
+reconstruction_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(x, x_hat), [1,2,3])
 
 # latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
-prior_scale = 10.
+prior_scale = 1.
 latent_KL = 0.5 * tf.reduce_sum((tf.square(loc) + tf.square(scale))/prior_scale**2 - tf.log(tf.square(scale/prior_scale)+1e-5) - 1,1)
 
 loss = tf.reduce_mean(reconstruction_loss+latent_KL)
@@ -125,7 +128,7 @@ train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=64)
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
 test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=False, size=64)
 
 config = tf.ConfigProto()
@@ -139,7 +142,8 @@ with tf.Session(config=config) as sess:
         print("epoch:", epoch, "----------")
         train_loss_epoch = []
         for data in train_data:
-            data = np.cast[np.float32]((data - 127.5) / 127.5)
+            # data = np.cast[np.float32]((data - 127.5) / 127.5)
+            data = np.cast[np.float32](data/255.)
             feed_dict = {x: data}
             l, _ = sess.run([loss, train_step], feed_dict=feed_dict)
             train_loss_epoch.append(l)
@@ -147,7 +151,7 @@ with tf.Session(config=config) as sess:
 
         test_loss_epoch = []
         for data in test_data:
-            data = np.cast[np.float32]((data - 127.5) / 127.5)
+            data = np.cast[np.float32](data/255.)
             feed_dict = {x: data}
             l = sess.run([loss], feed_dict=feed_dict)
             test_loss_epoch.append(l)

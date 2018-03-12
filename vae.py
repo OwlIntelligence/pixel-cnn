@@ -123,7 +123,7 @@ latent_KL = - 0.5 * tf.reduce_mean(1 + tf.log(tf.square(scale)) - tf.square(loc)
 
 loss = tf.reduce_mean(reconstruction_loss+latent_KL)
 
-train_step = tf.train.AdamOptimizer(0.001).minimize(loss)
+train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
@@ -146,7 +146,7 @@ with tf.Session(config=config) as sess:
             data = np.cast[np.float32](data/255.)
             feed_dict = {x: data}
             l, bce, kld, _ = sess.run([loss, reconstruction_loss, latent_KL, train_step], feed_dict=feed_dict)
-            print(l, bce, kld)
+            #print(l, bce, kld)
             train_loss_epoch.append(l)
         train_loss_epoch = np.mean(train_loss_epoch)
 
@@ -164,6 +164,7 @@ with tf.Session(config=config) as sess:
             saver.save(sess, FLAGS.save_dir + '/params_' + 'celeba' + '.ckpt')
 
             data = next(test_data)
+            data = np.cast[np.float32](data/255.)
             feed_dict = {x: data}
             sample_x, = sess.run([x_hat], feed_dict=feed_dict)
             test_data.reset()

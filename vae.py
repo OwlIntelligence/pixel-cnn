@@ -13,7 +13,7 @@ tf.flags.DEFINE_integer("z_dim", default_value=20, docstring="latent dimension")
 tf.flags.DEFINE_integer("batch_size", default_value=100, docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")
-tf.flags.DEFINE_string("data_set", default_value="celeba64", docstring="")
+tf.flags.DEFINE_string("data_set", default_value="celeba128", docstring="")
 
 FLAGS = tf.flags.FLAGS
 
@@ -105,7 +105,7 @@ train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=128)
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=128)
 test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=False, size=128)
 
 config = tf.ConfigProto()

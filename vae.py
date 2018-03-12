@@ -160,8 +160,8 @@ with tf.Session(config=config) as sess:
         test_loss, test_bce, test_kld = np.mean(ls), np.mean(bces), np.mean(klds)
 
         print("epoch {0} ---------------------".format(epoch))
-        print("train loss:{0}, train bce:{1}, train kld:{2}").format(train_loss, train_bce, train_kld)
-        print("test loss:{0}, test bce:{1}, test kld:{2}").format(test_loss, test_bce, test_kld)
+        print("train loss:{0}, train bce:{1}, train kld:{2}".format(train_loss, train_bce, train_kld))
+        print("test loss:{0}, test bce:{1}, test kld:{2}".format(test_loss, test_bce, test_kld))
 
         if epoch % 10==0:
 

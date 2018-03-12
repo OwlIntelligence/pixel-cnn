@@ -17,7 +17,7 @@ tf.flags.DEFINE_string("data_set", default_value="celeba64", docstring="")
 
 FLAGS = tf.flags.FLAGS
 
-kernel_initializer = tf.random_normal_initializer(0, 0.05)
+kernel_initializer = tf.random_normal_initializer()
 
 # def generative_network(z, init=False, ema=None, dropout_p=0.0):
 #     counters = {}

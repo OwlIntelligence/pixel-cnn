@@ -10,7 +10,7 @@ from utils import plotting
 
 #tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")
 tf.flags.DEFINE_integer("z_dim", default_value=20, docstring="latent dimension")
-tf.flags.DEFINE_integer("batch_size", default_value=50, docstring="")
+tf.flags.DEFINE_integer("batch_size", default_value=100, docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")
 tf.flags.DEFINE_string("data_set", default_value="celeba64", docstring="")
@@ -91,12 +91,10 @@ def inference_network(x):
         net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None, kernel_initializer=kernel_initializer)
         loc = net[:, :FLAGS.z_dim]
         log_var = net[:, FLAGS.z_dim:]
-        scale = tf.sqrt(tf.exp(log_var)+1e-5)
-        #log_scale = net[:, FLAGS.z_dim:]
-        #scale = tf.exp(log_scale)
-    return loc, scale
+    return loc, log_var
 
-def sample_z(loc, scale):
+def sample_z(loc, log_var):
+    scale = tf.sqrt(tf.exp(log_var))
     dist = tf.distributions.Normal(loc=loc, scale=scale)
     z = dist.sample()
     return z
@@ -109,26 +107,26 @@ def sample_z(loc, scale):
 
 x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 64, 64, 3))
 
-loc, scale = inference_network(x)
-z = sample_z(loc, scale)
+loc, log_var = inference_network(x)
+z = sample_z(loc, log_var)
 x_hat = generative_network(z)
 
-#reconstruction_loss = tf.reduce_mean(tf.square(x_hat - x), [1,2,3])
 flatten = tf.contrib.layers.flatten
-reconstruction_loss = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
+BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
 
-latent_KL = - 0.5 * tf.reduce_mean(1 + tf.log(tf.square(scale)) - tf.square(loc) - tf.square(scale), axis=-1)
+KLD = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axis=-1)
 #prior_scale = 1.
 #latent_KL = 0.5 * tf.reduce_sum((tf.square(loc) + tf.square(scale))/prior_scale**2 - tf.log(tf.square(scale/prior_scale)+1e-5) - 1,1)
 
-loss = tf.reduce_mean(reconstruction_loss+latent_KL)
+lam = 0.5
+loss = tf.reduce_mean( BCE + tf.maximum(lam, KLD) )
 
 train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=64)
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=64)
 test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=False, size=64)
 
 config = tf.ConfigProto()
@@ -140,27 +138,33 @@ with tf.Session(config=config) as sess:
     max_num_epoch = 1000
     for epoch in range(max_num_epoch):
         print("epoch:", epoch, "----------")
-        train_loss_epoch = []
+        ls, bces, klds = [], [], []
         for data in train_data:
             # data = np.cast[np.float32]((data - 127.5) / 127.5)
             data = np.cast[np.float32](data/255.)
             feed_dict = {x: data}
-            l, bce, kld, _ = sess.run([loss, reconstruction_loss, latent_KL, train_step], feed_dict=feed_dict)
-            #print(l, bce, kld)
-            train_loss_epoch.append(l)
-        train_loss_epoch = np.mean(train_loss_epoch)
+            l, bce, kld, _ = sess.run([loss, BCE, KLD, train_step], feed_dict=feed_dict)
+            ls.append(l)
+            bces.append(bce)
+            klds.append(kld)
+        train_loss, train_bce, train_kld = np.mean(ls), np.mean(bces), np.mean(klds)
 
-        test_loss_epoch = []
+        ls, bces, klds = [], [], []
         for data in test_data:
             data = np.cast[np.float32](data/255.)
             feed_dict = {x: data}
-            l = sess.run([loss], feed_dict=feed_dict)
-            test_loss_epoch.append(l)
-        test_loss_epoch = np.mean(test_loss_epoch)
+            l, bce, kld = sess.run([loss, BCE, KLD], feed_dict=feed_dict)
+            ls.append(l)
+            bces.append(bce)
+            klds.append(kld)
+        test_loss, test_bce, test_kld = np.mean(ls), np.mean(bces), np.mean(klds)
 
-        print("train loss:", train_loss_epoch, " test loss:", test_loss_epoch)
+        print("epoch {0} ---------------------".format(epoch))
+        print("train loss:{0}, train bce:{1}, train kld:{2}").format(train_loss, train_bce, train_kld)
+        print("test loss:{0}, test bce:{1}, test kld:{2}").format(test_loss, test_bce, test_kld)
 
         if epoch % 10==0:
+
             saver.save(sess, FLAGS.save_dir + '/params_' + 'celeba' + '.ckpt')
 
             data = next(test_data)

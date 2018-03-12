@@ -117,9 +117,9 @@ x_hat = generative_network(z)
 flatten = tf.contrib.layers.flatten
 reconstruction_loss = tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat))
 
-# latent_KL = 0.5 * tf.reduce_sum(tf.square(loc) + tf.square(scale) - tf.log(tf.square(scale)) - 1,1)
-prior_scale = 1.
-latent_KL = 0.5 * tf.reduce_sum((tf.square(loc) + tf.square(scale))/prior_scale**2 - tf.log(tf.square(scale/prior_scale)+1e-5) - 1,1)
+latent_KL = - 0.5 * tf.reduce_mean(1 + tf.log(tf.square(scale)) - tf.square(z_mean) - tf.square(scale), axis=-1)
+#prior_scale = 1.
+#latent_KL = 0.5 * tf.reduce_sum((tf.square(loc) + tf.square(scale))/prior_scale**2 - tf.log(tf.square(scale/prior_scale)+1e-5) - 1,1)
 
 loss = tf.reduce_mean(reconstruction_loss+latent_KL)
 

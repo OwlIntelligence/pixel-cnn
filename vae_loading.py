@@ -114,5 +114,5 @@ with tf.Session(config=config) as sess:
     print('restoring parameters from', ckpt_file)
     saver.restore(sess, ckpt_file)
 
-    for t in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='generative_network'):
+    for t in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='generative_network/batch_normalization'):
         print(t.name)

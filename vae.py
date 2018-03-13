@@ -78,7 +78,7 @@ def sample_z(loc, log_var):
     z = dist.sample()
     return z
 
-def vae_model(x, z_dim, lam=1.0, beta=1.0):
+def vae_model(x, z_dim):
     with tf.variable_scope("vae"):
         loc, log_var = inference_network(x)
         z = sample_z(loc, log_var)
@@ -89,11 +89,13 @@ def vae_model(x, z_dim, lam=1.0, beta=1.0):
 
 x = tf.placeholder(tf.float32, shape=(None, 128, 128, 3))
 
-model_opt = {"z_dim":100, "lam":1.0, "beta":1.0}
+model_opt = {"z_dim":100}
 model = tf.make_template('vae_model', vae_model)
 
 loc, log_var, z, x_hat = model(x, **model_opt)
 
+lam = 1.0
+beta = 1.0
 
 flatten = tf.contrib.layers.flatten
 # BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)

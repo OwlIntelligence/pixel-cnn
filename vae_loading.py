@@ -134,6 +134,7 @@ with tf.Session(config=config) as sess:
 
     data = next(test_data)
     feed_dict = make_feed_dict(data)
-    sample_x = sess.run([x_hats], feed_dict=feed_dict)
+    sample_x = sess.run(x_hats, feed_dict=feed_dict)
+    sample_x = np.concatenate(sample_x, axis=0)
 
     print(sample_x)

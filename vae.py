@@ -21,7 +21,7 @@ kernel_initializer = None #tf.random_normal_initializer()
 
 def generative_network(z):
     with tf.variable_scope("generative_network"):
-        net = tf.reshape(z, [FLAGS.batch_size, 1, 1, FLAGS.z_dim])
+        net = tf.reshape(z, [-1, 1, 1, FLAGS.z_dim])
 
         net = tf.layers.conv2d_transpose(net, 2048, 4, strides=1, padding='VALID', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
@@ -47,7 +47,7 @@ def generative_network(z):
 
 def inference_network(x):
     with tf.variable_scope("inference_network"):
-        net = tf.reshape(x, [FLAGS.batch_size, 128, 128, 3]) # 128x128x3
+        net = tf.reshape(x, [-1, 128, 128, 3]) # 128x128x3
         net = tf.layers.conv2d(net, 64, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 64x64
@@ -66,7 +66,8 @@ def inference_network(x):
         net = tf.layers.conv2d(net, 2048, 4, strides=1, padding='VALID', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 1x1
-        net = tf.reshape(net, [FLAGS.batch_size, -1])
+        s = tf.shape(net)
+        net = tf.reshape(net, [-1, s[1]*s[2]*s[3]])
         net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None, kernel_initializer=kernel_initializer)
         loc = net[:, :FLAGS.z_dim]
         log_var = net[:, FLAGS.z_dim:]
@@ -78,34 +79,30 @@ def sample_z(loc, log_var):
     z = dist.sample()
     return z
 
+with tf.variable_scope("vae"):
+    x = tf.placeholder(tf.float32, shape=(-1, 128, 128, 3))
 
-# def sample_x(params):
-#     x_hat = nn.sample_from_discretized_mix_logistic(params, FLAGS.nr_mix)
-#     return x_hat
+    loc, log_var = inference_network(x)
+    z = sample_z(loc, log_var)
+    x_hat = generative_network(z)
 
+    flatten = tf.contrib.layers.flatten
+    # BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
+    MSE = tf.reduce_sum(tf.square(flatten(x)-flatten(x_hat)), 1)
 
-x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 128, 128, 3))
+    KLD = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axis=-1)
+    #prior_scale = 1.
+    #latent_KL = 0.5 * tf.reduce_sum((tf.square(loc) + tf.square(scale))/prior_scale**2 - tf.log(tf.square(scale/prior_scale)+1e-5) - 1,1)
 
-loc, log_var = inference_network(x)
-z = sample_z(loc, log_var)
-x_hat = generative_network(z)
+    lam = 0.5
+    beta = 250.
+    loss = tf.reduce_mean( MSE + beta * tf.maximum(lam, KLD) )
 
-flatten = tf.contrib.layers.flatten
-# BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
-BCE = tf.reduce_sum(tf.square(flatten(x)-flatten(x_hat)), 1)
+    train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 
-KLD = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axis=-1)
-#prior_scale = 1.
-#latent_KL = 0.5 * tf.reduce_sum((tf.square(loc) + tf.square(scale))/prior_scale**2 - tf.log(tf.square(scale/prior_scale)+1e-5) - 1,1)
+    initializer = tf.global_variables_initializer()
+    saver = tf.train.Saver()
 
-lam = 0.5
-beta = 250.
-loss = tf.reduce_mean( BCE + beta * tf.maximum(lam, KLD) )
-
-train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
-
-initializer = tf.global_variables_initializer()
-saver = tf.train.Saver()
 
 train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=128)
 test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=False, size=128)
@@ -118,30 +115,30 @@ with tf.Session(config=config) as sess:
 
     max_num_epoch = 1000
     for epoch in range(max_num_epoch):
-        ls, bces, klds = [], [], []
+        ls, mses, klds = [], [], []
         for data in train_data:
             # data = np.cast[np.float32]((data - 127.5) / 127.5)
             data = np.cast[np.float32](data/255.)
             feed_dict = {x: data}
-            l, bce, kld, _ = sess.run([loss, BCE, KLD, train_step], feed_dict=feed_dict)
+            l, mse, kld, _ = sess.run([loss, MSE, KLD, train_step], feed_dict=feed_dict)
             ls.append(l)
-            bces.append(bce)
+            mses.append(mse)
             klds.append(kld)
-        train_loss, train_bce, train_kld = np.mean(ls), np.mean(bces), np.mean(klds)
+        train_loss, train_mse, train_kld = np.mean(ls), np.mean(mses), np.mean(klds)
 
-        ls, bces, klds = [], [], []
+        ls, mses, klds = [], [], []
         for data in test_data:
             data = np.cast[np.float32](data/255.)
             feed_dict = {x: data}
-            l, bce, kld = sess.run([loss, BCE, KLD], feed_dict=feed_dict)
+            l, mse, kld = sess.run([loss, MSE, KLD], feed_dict=feed_dict)
             ls.append(l)
-            bces.append(bce)
+            mses.append(mse)
             klds.append(kld)
-        test_loss, test_bce, test_kld = np.mean(ls), np.mean(bces), np.mean(klds)
+        test_loss, test_mse, test_kld = np.mean(ls), np.mean(mses), np.mean(klds)
 
         print("epoch {0} ---------------------".format(epoch))
-        print("train loss:{0:.4f}, train bce:{1:.4f}, train kld:{2:.4f}".format(train_loss, train_bce, train_kld))
-        print("test loss:{0:.4f}, test bce:{1:.4f}, test kld:{2:.4f}".format(test_loss, test_bce, test_kld))
+        print("train loss:{0:.4f}, train mse:{1:.4f}, train kld:{2:.4f}".format(train_loss, train_mse, train_kld))
+        print("test loss:{0:.4f}, test mse:{1:.4f}, test kld:{2:.4f}".format(test_loss, test_mse, test_kld))
 
         if epoch % 10==0:
 

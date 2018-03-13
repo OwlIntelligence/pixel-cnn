@@ -159,6 +159,7 @@ with tf.Session(config=config) as sess:
 
     max_num_epoch = 1000
     for epoch in range(max_num_epoch):
+        tt = time.time()
         ls, mses, klds = [], [], []
         for data in train_data:
             feed_dict = make_feed_dict(data)
@@ -177,7 +178,7 @@ with tf.Session(config=config) as sess:
             klds.append(kld)
         test_loss, test_mse, test_kld = np.mean(ls), np.mean(mses), np.mean(klds)
 
-        print("epoch {0} ---------------------".format(epoch))
+        print("epoch {0} --------------------- Time {1}s".format(epoch, time.time()-tt))
         print("train loss:{0:.4f}, train mse:{1:.4f}, train kld:{2:.4f}".format(train_loss, train_mse, train_kld))
         print("test loss:{0:.4f}, test mse:{1:.4f}, test kld:{2:.4f}".format(test_loss, test_mse, test_kld))
 

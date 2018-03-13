@@ -105,7 +105,7 @@ MSEs = [None for i in range(FLAGS.nr_gpu)]
 KLDs = [None for i in range(FLAGS.nr_gpu)]
 
 
-for i in range(nr_gpu):
+for i in range(FLAGS.nr_gpu):
     with tf.device('/gpu:%d' % i):
         locs[i], log_vars[i], zs[i], x_hats[i] = model(xs[i], **model_opt)
 

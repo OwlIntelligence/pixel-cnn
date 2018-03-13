@@ -101,11 +101,20 @@ locs = [None for i in range(FLAGS.nr_gpu)]
 log_vars = [None for i in range(FLAGS.nr_gpu)]
 zs = [None for i in range(FLAGS.nr_gpu)]
 x_hats = [None for i in range(FLAGS.nr_gpu)]
+MSEs = [None for i in range(FLAGS.nr_gpu)]
+KLDs = [None for i in range(FLAGS.nr_gpu)]
+losses = [None for i in range(FLAGS.nr_gpu)]
 
+lam = 0.5
+beta = 100.
+flatten = tf.contrib.layers.flatten
 
 for i in range(FLAGS.nr_gpu):
     with tf.device('/gpu:%d' % i):
         locs[i], log_vars[i], zs[i], x_hats[i] = model(xs[i], **model_opt)
+        MSEs[i] = tf.reduce_sum(tf.square(flatten(x)-flatten(x_hat)), 1)
+        KLDs[i] = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axis=-1)
+        losses[i] = tf.reduce_mean( MSE + beta * tf.maximum(lam, KLD) )
 
 with tf.device('/gpu:%d' % 0):
     x = tf.concat(xs, axis=0)
@@ -114,22 +123,11 @@ with tf.device('/gpu:%d' % 0):
     z = tf.concat(zs, axis=0)
     x_hat = tf.concat(x_hats, axis=0)
 
-##
-
-lam = 0.5
-beta = 100.
-
-flatten = tf.contrib.layers.flatten
-# BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
-MSE = tf.reduce_sum(tf.square(flatten(x)-flatten(x_hat)), 1)
-
-KLD = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axis=-1)
-#prior_scale = 1.
-#latent_KL = 0.5 * tf.reduce_sum((tf.square(loc) + tf.square(scale))/prior_scale**2 - tf.log(tf.square(scale/prior_scale)+1e-5) - 1,1)
-loss = tf.reduce_mean( MSE + beta * tf.maximum(lam, KLD) )
+MSE = tf.reduce_sum(MSEs)
+KLD = tf.reduce_sum(KLDs)
+loss = tf.reduce_sum(losses)
 
 train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
-
 
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()

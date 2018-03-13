@@ -109,4 +109,9 @@ with tf.Session(config=config) as sess:
     print('restoring parameters from', ckpt_file)
     saver.restore(sess, ckpt_file)
 
-    print(zs[i])
+    train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=128)
+    data = next(train_data)
+    data = np.cast[np.float32](data/255.)
+    feed_dict = {x: data}
+    xx = sess.run(x_hats, feed_dict=feed_dict)
+    print(xx)

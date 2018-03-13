@@ -99,7 +99,8 @@ KLD = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axi
 #latent_KL = 0.5 * tf.reduce_sum((tf.square(loc) + tf.square(scale))/prior_scale**2 - tf.log(tf.square(scale/prior_scale)+1e-5) - 1,1)
 
 lam = 0.5
-loss = tf.reduce_mean( BCE + tf.maximum(lam, KLD) )
+beta = 250.
+loss = tf.reduce_mean( BCE + beta * tf.maximum(lam, KLD) )
 
 train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 

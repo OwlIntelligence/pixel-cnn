@@ -105,5 +105,5 @@ with tf.Session(config=config) as sess:
     print('restoring parameters from', ckpt_file)
     saver.restore(sess, ckpt_file)
 
-    for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='vae/generative_network'):
+    for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=''):
         print(v.name)

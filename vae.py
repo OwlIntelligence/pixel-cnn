@@ -112,9 +112,9 @@ flatten = tf.contrib.layers.flatten
 for i in range(FLAGS.nr_gpu):
     with tf.device('/gpu:%d' % i):
         locs[i], log_vars[i], zs[i], x_hats[i] = model(xs[i], **model_opt)
-        MSEs[i] = tf.reduce_sum(tf.square(flatten(x)-flatten(x_hat)), 1)
-        KLDs[i] = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axis=-1)
-        losses[i] = tf.reduce_mean( MSE + beta * tf.maximum(lam, KLD) )
+        MSEs[i] = tf.reduce_sum(tf.square(flatten(xs[i])-flatten(x_hats[i])), 1)
+        KLDs[i] = - 0.5 * tf.reduce_mean(1 + log_vars[i] - tf.square(locs[i]) - tf.exp(log_vars[i]), axis=-1)
+        losses[i] = tf.reduce_mean( MSEs[i] + beta * tf.maximum(lam, KLDs[i]) )
 
 with tf.device('/gpu:%d' % 0):
     x = tf.concat(xs, axis=0)

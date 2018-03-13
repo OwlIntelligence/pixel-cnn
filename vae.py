@@ -178,9 +178,9 @@ with tf.Session(config=config) as sess:
             klds.append(kld)
         test_loss, test_mse, test_kld = np.mean(ls), np.mean(mses), np.mean(klds)
 
-        print("epoch {0} --------------------- Time {1}s".format(epoch, time.time()-tt))
-        print("train loss:{0:.4f}, train mse:{1:.4f}, train kld:{2:.4f}".format(train_loss, train_mse, train_kld))
-        print("test loss:{0:.4f}, test mse:{1:.4f}, test kld:{2:.4f}".format(test_loss, test_mse, test_kld))
+        print("epoch {0} --------------------- Time {1:.2f}s".format(epoch, time.time()-tt))
+        print("train loss:{0:.3f}, train mse:{1:.3f}, train kld:{2:.3f}".format(train_loss, train_mse, train_kld))
+        print("test loss:{0:.3f}, test mse:{1:.3f}, test kld:{2:.3f}".format(test_loss, test_mse, test_kld))
 
         if epoch % 10==0:
 

@@ -14,7 +14,7 @@ tf.flags.DEFINE_integer("batch_size", default_value=100, docstring="")
 tf.flags.DEFINE_integer("nr_gpu", default_value=2, docstring="number of GPUs")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")
-tf.flags.DEFINE_string("data_set", default_value="celeba128", docstring="")
+tf.flags.DEFINE_boolean("load_params", default_value=False, docstring="load_parameters from save_dir?")
 
 FLAGS = tf.flags.FLAGS
 
@@ -150,6 +150,11 @@ config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
     # init
     sess.run(initializer)
+
+    if FLAGS.load_params:
+        ckpt_file = FLAGS.save_dir + '/params_' + 'celeba' + '.ckpt'
+        print('restoring parameters from', ckpt_file)
+        saver.restore(sess, ckpt_file)
 
     max_num_epoch = 1000
     for epoch in range(max_num_epoch):

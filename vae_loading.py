@@ -94,6 +94,8 @@ model = tf.make_template('vae_model', vae_model)
 
 loc, log_var, z, x_hat = model(x, **model_opt)
 
+saver = tf.train.Saver()
+
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

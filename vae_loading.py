@@ -78,21 +78,30 @@ def sample_z(loc, log_var):
     z = dist.sample()
     return z
 
-with tf.variable_scope("vae"):
-    x = tf.placeholder(tf.float32, shape=(None, 128, 128, 3))
+def vae_model(x, z_dim):
+    with tf.variable_scope("vae"):
+        loc, log_var = inference_network(x)
+        z = sample_z(loc, log_var)
+        x_hat = generative_network(z)
+        return loc, log_var, z, x_hat
 
-    loc, log_var = inference_network(x)
-    z = sample_z(loc, log_var)
-    x_hat = generative_network(z)
 
-    flatten = tf.contrib.layers.flatten
-    # BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
-    MSE = tf.reduce_sum(tf.square(flatten(x)-flatten(x_hat)), 1)
 
-    KLD = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axis=-1)
-    #prior_scale = 1.
-    #latent_KL = 0.5 * tf.reduce_sum((tf.square(loc) + tf.square(scale))/prior_scale**2 - tf.log(tf.square(scale/prior_scale)+1e-5) - 1,1)
+x = tf.placeholder(tf.float32, shape=(None, 128, 128, 3))
 
-    lam = 0.5
-    beta = 250.
-    loss = tf.reduce_mean( MSE + beta * tf.maximum(lam, KLD) )
+model_opt = {"z_dim":100}
+model = tf.make_template('vae_model', vae_model)
+
+loc, log_var, z, x_hat = model(x, **model_opt)
+
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+with tf.Session(config=config) as sess:
+
+    ckpt_file = FLAGS.save_dir + '/params_' + 'celeba' + '.ckpt'
+    print('restoring parameters from', ckpt_file)
+    saver.restore(sess, ckpt_file)
+
+    for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='vae/generative_network'):
+        print(v.name)

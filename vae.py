@@ -91,7 +91,7 @@ model_opt = {"z_dim":100}
 model = tf.make_template('vae', vae_model)
 
 ##
-xs = [tf.placeholder(tf.float32, shape=(None, 128, 128, 3)) for i in range(nr_gpu)]
+xs = [tf.placeholder(tf.float32, shape=(None, 128, 128, 3)) for i in range(FLAGS.nr_gpu)]
 
 model_opt = {"z_dim":100}
 model = tf.make_template('vae_model', vae_model)

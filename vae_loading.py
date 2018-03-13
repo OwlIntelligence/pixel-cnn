@@ -66,8 +66,7 @@ def inference_network(x):
         net = tf.layers.conv2d(net, 2048, 4, strides=1, padding='VALID', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 1x1
-        s = tf.shape(net)
-        net = tf.reshape(net, [-1, s[1]*s[2]*s[3]])
+        net = tf.reshape(net, [-1, 2048])
         net = tf.layers.dense(net, FLAGS.z_dim * 2, activation=None, kernel_initializer=kernel_initializer)
         loc = net[:, :FLAGS.z_dim]
         log_var = net[:, FLAGS.z_dim:]

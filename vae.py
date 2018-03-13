@@ -41,9 +41,10 @@ def generative_network(z):
         net = tf.layers.conv2d_transpose(net, 64, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)
         net = tf.nn.elu(net) # 128x128
-        net = tf.layers.conv2d_transpose(net, 3, 1, strides=1, padding='SAME', kernel_initializer=kernel_initializer)
-        net = tf.nn.sigmoid(net)
-    return net
+        net = tf.layers.conv2d_transpose(net, 6, 1, strides=1, padding='SAME', kernel_initializer=kernel_initializer)
+        loc = tf.nn.sigmoid(net[:, :, :, :3])
+        log_var = net[:, :, :, 3:]
+    return loc, log_var
 
 def inference_network(x):
     with tf.variable_scope("inference_network"):
@@ -88,12 +89,12 @@ x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 128, 128, 3))
 
 loc, log_var = inference_network(x)
 z = sample_z(loc, log_var)
-x_hat = generative_network(z)
+x_hat, x_log_var = generative_network(z)
 
-flatten = tf.contrib.layers.flatten
+#flatten = tf.contrib.layers.flatten
 # BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
-BCE = tf.reduce_sum(tf.square(flatten(x)-flatten(x_hat)), 1)
-
+#BCE = tf.reduce_sum(tf.square(flatten(x)-flatten(x_hat)), 1)
+NLL = 0.5 * (tf.reduce_sum(tf.square(x - x_hat) / x_log_var, [1,2,3]) + 128*128*3*tf.log(2*np.pi) + tf.reduce_sum(x_log_var, [1,2,3]))
 
 
 KLD = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axis=-1)

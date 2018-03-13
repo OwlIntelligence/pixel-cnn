@@ -116,12 +116,6 @@ for i in range(FLAGS.nr_gpu):
         KLDs[i] = - 0.5 * tf.reduce_mean(1 + log_vars[i] - tf.square(locs[i]) - tf.exp(log_vars[i]), axis=-1)
         losses[i] = tf.reduce_mean( MSEs[i] + beta * tf.maximum(lam, KLDs[i]) )
 
-with tf.device('/gpu:%d' % 0):
-    x = tf.concat(xs, axis=0)
-    loc = tf.concat(locs, axis=0)
-    log_var = tf.concat(log_vars, axis=0)
-    z = tf.concat(zs, axis=0)
-    x_hat = tf.concat(x_hats, axis=0)
 
 MSE = tf.reduce_sum(MSEs)
 KLD = tf.reduce_sum(KLDs)
@@ -186,7 +180,8 @@ with tf.Session(config=config) as sess:
 
             data = next(test_data)
             feed_dict = make_feed_dict(data)
-            sample_x, = sess.run([x_hat], feed_dict=feed_dict)
+            sample_x, = sess.run([x_hats], feed_dict=feed_dict)
+            sample_x = np.concatenate(sample_x, axis=0)
             test_data.reset()
 
             img_tile = plotting.img_tile(sample_x[:25], aspect_ratio=1.0, border_color=1.0, stretch=True)

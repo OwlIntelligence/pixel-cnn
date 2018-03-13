@@ -101,15 +101,13 @@ log_vars = [None for i in range(FLAGS.nr_gpu)]
 zs = [None for i in range(FLAGS.nr_gpu)]
 x_hats = [None for i in range(FLAGS.nr_gpu)]
 
-MSEs = [None for i in range(FLAGS.nr_gpu)]
-KLDs = [None for i in range(FLAGS.nr_gpu)]
-
 
 for i in range(FLAGS.nr_gpu):
     with tf.device('/gpu:%d' % i):
         locs[i], log_vars[i], zs[i], x_hats[i] = model(xs[i], **model_opt)
 
 with tf.device('/gpu:%d' % 0):
+    x = tf.concat(xs, axis=0)
     loc = tf.concat(locs, axis=0)
     log_var = tf.concat(log_vars, axis=0)
     z = tf.concat(zs, axis=0)

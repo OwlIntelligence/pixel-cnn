@@ -133,6 +133,14 @@ train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
+def make_feed_dict(data):
+    data = np.cast[np.float32](data/255.)
+    ds = np.split(data, FLAGS.nr_gpu)
+    for i in range(FLAGS.nr_gpu):
+        feed_dict = { xs[i]:ds[i] for i in range(FLAGS.nr_gpu) }
+    return feed_dict
+
+
 
 train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=128)
 test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=False, size=128)
@@ -147,9 +155,7 @@ with tf.Session(config=config) as sess:
     for epoch in range(max_num_epoch):
         ls, mses, klds = [], [], []
         for data in train_data:
-            # data = np.cast[np.float32]((data - 127.5) / 127.5)
-            data = np.cast[np.float32](data/255.)
-            feed_dict = {x: data}
+            feed_dict = make_feed_dict(data)
             l, mse, kld, _ = sess.run([loss, MSE, KLD, train_step], feed_dict=feed_dict)
             ls.append(l)
             mses.append(mse)
@@ -158,8 +164,7 @@ with tf.Session(config=config) as sess:
 
         ls, mses, klds = [], [], []
         for data in test_data:
-            data = np.cast[np.float32](data/255.)
-            feed_dict = {x: data}
+            feed_dict = make_feed_dict(data)
             l, mse, kld = sess.run([loss, MSE, KLD], feed_dict=feed_dict)
             ls.append(l)
             mses.append(mse)
@@ -175,8 +180,7 @@ with tf.Session(config=config) as sess:
             saver.save(sess, FLAGS.save_dir + '/params_' + 'celeba' + '.ckpt')
 
             data = next(test_data)
-            data = np.cast[np.float32](data/255.)
-            feed_dict = {x: data}
+            feed_dict = make_feed_dict(data)
             sample_x, = sess.run([x_hat], feed_dict=feed_dict)
             test_data.reset()
 

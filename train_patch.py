@@ -7,7 +7,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train_double_cnn.py --nr_gpu 4
 """
 
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+
 import sys
 import json
 import argparse
@@ -21,6 +21,7 @@ from pixel_cnn_pp.model import model_spec
 from utils import plotting
 import utils.mask as um
 import utils.mfunc as uf
+import utils.grid as grid
 
 # self define modules
 from configs import config_args, configs
@@ -39,10 +40,6 @@ parser.add_argument('-n', '--nr_filters', type=int, default=160, help='Number of
 parser.add_argument('-m', '--nr_logistic_mix', type=int, default=10, help='Number of logistic components in the mixture. Higher = more flexible model')
 parser.add_argument('-z', '--resnet_nonlinearity', type=str, default='concat_elu', help='Which nonlinearity to use in the ResNet layers. One of "concat_elu", "elu", "relu" ')
 parser.add_argument('-c', '--class_conditional', dest='class_conditional', action='store_true', help='Condition generative model on labels?')
-parser.add_argument('-sc', '--spatial_conditional', dest='spatial_conditional', action='store_true', help='Condition on spatial latent codes?')
-parser.add_argument('-gc', '--global_conditional', dest='global_conditional', action='store_true', help='Condition on global latent codes?')
-parser.add_argument('-ms', '--map_sampling', dest='map_sampling', action='store_true', help='use MAP sampling?')
-parser.add_argument('-cn', '--config_name', type=str, default='None', help='what is the config name?')
 parser.add_argument('-ed', '--energy_distance', dest='energy_distance', action='store_true', help='use energy distance in place of likelihood')
 # optimization
 parser.add_argument('-l', '--learning_rate', type=float, default=0.001, help='Base learning rate')
@@ -57,10 +54,30 @@ parser.add_argument('--polyak_decay', type=float, default=0.9995, help='Exponent
 parser.add_argument('-ns', '--num_samples', type=int, default=1, help='How many batches of samples to output.')
 # reproducibility
 parser.add_argument('-s', '--seed', type=int, default=1, help='Random seed to use')
+# new features
+parser.add_argument('-sc', '--spatial_conditional', dest='spatial_conditional', action='store_true', help='Condition on spatial latent codes?')
+parser.add_argument('-gc', '--global_conditional', dest='global_conditional', action='store_true', help='Condition on global latent codes?')
+parser.add_argument('-ms', '--map_sampling', dest='map_sampling', action='store_true', help='use MAP sampling?')
+parser.add_argument('-cn', '--config_name', type=str, default='None', help='what is the config name?')
+parser.add_argument('-gd', '--global_latent_dim', type=int, default=10, help='dimension for the global latent variables')
+parser.add_argument('-sn', '--spatial_latent_num_channel', type=int, default=4, help='number of channels for spatial latent variables')
+parser.add_argument('-is', '--input_size', type=int, default=-1, help='input size')
+parser.add_argument('-cc', '--context_conditioning', dest='context_conditioning', action='store_true', help='Condition on context (masked inputs)?')
+parser.add_argument('-dg', '--debug', dest='debug', action='store_true', help='Under debug mode?')
+#
 args = parser.parse_args()
-#config_args(args, configs['cifar'])
+
 config_args(args, configs[args.config_name])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
+
+if args.nr_gpu == 1:
+    os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+elif args.nr_gpu == 2:
+    os.environ['CUDA_VISIBLE_DEVICES'] = '6,7'
+elif args.nr_gpu == 3:
+    os.environ['CUDA_VISIBLE_DEVICES'] = '5,6,7'
+elif args.nr_gpu == 4:
+    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility
@@ -87,13 +104,23 @@ elif 'celeba' in args.data_set:
     DataLoader = celeba_data.DataLoader
 else:
     raise("unsupported dataset")
-train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
-test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional)
 if args.data_set=='celeba128':
-     train_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
-     test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional, size=128)
+    if args.debug:
+        train_data = DataLoader(args.data_dir, 'valid', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
+    else:
+        train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional, size=128)
+    test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional, size=128)
+else:
+    if args.debug:
+        train_data = DataLoader(args.data_dir, 'valid', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
+    else:
+        train_data = DataLoader(args.data_dir, 'train', args.batch_size * args.nr_gpu, rng=rng, shuffle=True, return_labels=args.class_conditional)
+    test_data = DataLoader(args.data_dir, 'test', args.batch_size * args.nr_gpu, shuffle=False, return_labels=args.class_conditional)
 img_shape = train_data.get_observation_size() # e.g. a tuple (32,32,3)
-obs_shape = (32, 32, 3)
+if args.input_size < 0:
+    obs_shape = img_shape
+else:
+    obs_shape = args.input_size, args.input_size, img_shape[-1]
 
 # data place holders
 x_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + obs_shape)
@@ -102,13 +129,13 @@ gh_init, sh_init = None, None
 ghs, shs, gh_sample, sh_sample = [[None] * args.nr_gpu for i in range(4)]
 
 if args.global_conditional:
-    latent_dim = 2
-    gh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size, latent_dim))
-    ghs = [tf.placeholder(tf.float32, shape=(args.batch_size, latent_dim)) for i in range(args.nr_gpu)]
+    gh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size, args.global_latent_dim))
+    ghs = [tf.placeholder(tf.float32, shape=(args.batch_size, args.global_latent_dim)) for i in range(args.nr_gpu)]
+    gh_sample = ghs
 if args.spatial_conditional:
-    latent_shape = obs_shape[0], obs_shape[1], obs_shape[2]+1 ##
-    sh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + latent_shape)
-    shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + latent_shape ) for i in range(args.nr_gpu)]
+    spatial_latent_shape = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel ##
+    sh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + spatial_latent_shape)
+    shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + spatial_latent_shape ) for i in range(args.nr_gpu)]
     sh_sample = shs
 
 
@@ -135,19 +162,17 @@ for i in range(args.nr_gpu):
     with tf.device('/gpu:%d' % i):
         # train
         out = model(xs[i], ghs[i], shs[i], ema=None, dropout_p=args.dropout_p, **model_opt)
-        if args.spatial_conditional:
-            loss_gen.append(loss_fun(tf.stop_gradient(xs[i]), out, masks=shs[i][:, :, :, -1]))
-        else:
-            loss_gen.append(loss_fun(tf.stop_gradient(xs[i]), out))
+        mask_tf = None
+        if args.context_conditioning:
+            mask_tf = shs[i][:, :, :, -1]
+        loss_gen.append(loss_fun(tf.stop_gradient(xs[i]), out, masks=mask_tf))
+
         # gradients
         grads.append(tf.gradients(loss_gen[i], all_params, colocate_gradients_with_ops=True))
 
         # test
         out = model(xs[i], ghs[i], shs[i], ema=ema, dropout_p=0., **model_opt)
-        if args.spatial_conditional:
-            loss_gen_test.append(loss_fun(xs[i], out, masks=shs[i][:, :, :, -1]))
-        else:
-            loss_gen_test.append(loss_fun(xs[i], out))
+        loss_gen_test.append(loss_fun(xs[i], out, masks=mask_tf))
 
         # sample
         out = model(xs[i], gh_sample[i], sh_sample[i], ema=ema, dropout_p=0, **model_opt)
@@ -177,24 +202,61 @@ bits_per_dim = loss_gen[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch
 bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch_size)
 
 # mask generator
-train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1])
-test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
+train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
+#train_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
+test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
+sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.875)
 
 # sample from the model
+# def sample_from_model(sess, data=None):
+#     if data is not None and type(data) is not tuple:
+#         x = data
+#     x = np.cast[np.float32]((x - 127.5) / 127.5)
+#     x = np.split(x, args.nr_gpu)
+#     h = [x[i].copy() for i in range(args.nr_gpu)]
+#     for i in range(args.nr_gpu):
+#         h[i] = uf.mask_inputs(h[i], test_mgen)
+#     feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
+#     #x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
+#     x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
+#     m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
+#     #assert m_gen[0]==m_gen[-1], "we currently assume all masks are the same during sampling"
+#     m_gen = m_gen[0][0]
+#     for yi in range(obs_shape[0]):
+#         for xi in range(obs_shape[1]):
+#             if m_gen[yi,xi] == 0:
+#                 feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
+#                 new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
+#                 for i in range(args.nr_gpu):
+#                     x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
+#     return np.concatenate(x_gen, axis=0)
+
 def sample_from_model(sess, data=None):
     if data is not None and type(data) is not tuple:
         x = data
     x = np.cast[np.float32]((x - 127.5) / 127.5)
+    g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
+    xg = np.concatenate([x, g], axis=-1)
+    xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
+    x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
     x = np.split(x, args.nr_gpu)
+    g = np.split(g, args.nr_gpu)
+    # y = np.split(y, args.nr_gpu)
+
     h = [x[i].copy() for i in range(args.nr_gpu)]
     for i in range(args.nr_gpu):
-        h[i] = uf.mask_inputs(h[i], test_mgen)
-    feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
-    #x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
-    x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
-    m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
-    #assert m_gen[0]==m_gen[-1], "we currently assume all masks are the same during sampling"
-    m_gen = m_gen[0][0]
+        h[i] = uf.mask_inputs(h[i], sample_mgen)
+        h[i] = np.concatenate([g[i], h[i]], axis=-1)
+    if args.spatial_conditional:
+        feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
+    if args.global_conditional:
+        feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
+
+    if args.context_conditioning:
+        x_gen = [h[i][:,:,:,-4:-1].copy() for i in range(args.nr_gpu)]
+        m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
+        m_gen = m_gen[0][0]
+
     for yi in range(obs_shape[0]):
         for xi in range(obs_shape[1]):
             if m_gen[yi,xi] == 0:
@@ -204,55 +266,12 @@ def sample_from_model(sess, data=None):
                     x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
     return np.concatenate(x_gen, axis=0)
 
+
 # init & save
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
 # turn numpy inputs into feed_dict for use with tensorflow
-def make_feed_dict(data, init=False):
-    if type(data) is tuple:
-        x,y = data
-    else:
-        x = data
-        y = None
-    full_images = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
-
-    ## random rectangle crop
-    bsize = full_images.shape[0]
-    crange = img_shape[0]-obs_shape[0]
-    rng = np.random.RandomState(None)
-    coordinate = rng.randint(low=0, high=crange, size=(bsize, 2))
-    x = []
-    for k in range(bsize):
-        cy, cx = coordinate[k]
-        x.append(full_images[k][cy:cy+obs_shape[0], cx:cx+obs_shape[1], :])
-    x = np.array(x)
-    y = coordinate.astype(np.float32)
-    y /= (float(crange)/2)
-    y -= 1.
-
-    if init:
-        feed_dict = {x_init: x}
-        if gh_init is not None:
-            feed_dict.update({gh_init: y})
-        if sh_init is not None:
-            h = x.copy()
-            h = uf.mask_inputs(h, train_mgen)
-            feed_dict.update({sh_init: h})
-    else:
-        x = np.split(x, args.nr_gpu)
-        if y is not None:
-            y = np.split(y, args.nr_gpu)
-        feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
-        if args.spatial_conditional:
-            h = [x[i].copy() for i in range(args.nr_gpu)]
-            for i in range(args.nr_gpu):
-                h[i] = uf.mask_inputs(h[i], train_mgen)
-            feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
-        if args.global_conditional:
-            feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
-    return feed_dict
-
 # def make_feed_dict(data, init=False):
 #     if type(data) is tuple:
 #         x,y = data
@@ -262,21 +281,59 @@ def make_feed_dict(data, init=False):
 #     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
 #     if init:
 #         feed_dict = {x_init: x}
-#         if h_init is not None:
-#             feed_dict.update({h_init: x})
-#         if y is not None:
-#             feed_dict.update({y_init: y})
+#         if gh_init is not None:
+#             pass #feed_dict.update({gh_init: x})
+#         if sh_init is not None:
+#             h = x.copy()
+#             h = uf.mask_inputs(h, train_mgen)
+#             feed_dict.update({sh_init: h})
 #     else:
 #         x = np.split(x, args.nr_gpu)
 #         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
-#         if y is not None:
-#             y = np.split(y, args.nr_gpu)
-#             feed_dict.update({ys[i]: y[i] for i in range(args.nr_gpu)})
-#
-#     if args.spatial_conditional:
-#         if not init:
-#             feed_dict.update({hs[i]: x[i] for i in range(args.nr_gpu)})
+#         if args.spatial_conditional:
+#             h = [x[i].copy() for i in range(args.nr_gpu)]
+#             for i in range(args.nr_gpu):
+#                 h[i] = uf.mask_inputs(h[i], train_mgen)
+#             feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
 #     return feed_dict
+
+def make_feed_dict(data, init=False):
+    if type(data) is tuple:
+        x,y = data
+    else:
+        x = data
+        y = None
+
+    x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
+    g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
+    xg = np.concatenate([x, g], axis=-1)
+    xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
+    x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
+
+    if init:
+        feed_dict = {x_init: x}
+        if gh_init is not None:
+            feed_dict.update({gh_init: y})
+        if sh_init is not None:
+            h = x.copy()
+            h = uf.mask_inputs(h, train_mgen)
+            h = np.concatenate([g, h], axis=-1)
+            feed_dict.update({sh_init: h})
+    else:
+        x = np.split(x, args.nr_gpu)
+        g = np.split(g, args.nr_gpu)
+        if y is not None:
+            y = np.split(y, args.nr_gpu)
+        feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
+        if args.spatial_conditional:
+            h = [x[i].copy() for i in range(args.nr_gpu)]
+            for i in range(args.nr_gpu):
+                h[i] = uf.mask_inputs(h[i], train_mgen)
+                h[i] = np.concatenate([g[i], h[i]], axis=-1)
+            feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
+        if args.global_conditional:
+            feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
+    return feed_dict
 
 # //////////// perform training //////////////
 if not os.path.exists(args.save_dir):

@@ -80,7 +80,7 @@ def sample_z(loc, log_var):
     return z
 
 with tf.variable_scope("vae"):
-    x = tf.placeholder(tf.float32, shape=(-1, 128, 128, 3))
+    x = tf.placeholder(tf.float32, shape=(None, 128, 128, 3))
 
     loc, log_var = inference_network(x)
     z = sample_z(loc, log_var)

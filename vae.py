@@ -117,9 +117,9 @@ for i in range(FLAGS.nr_gpu):
         losses[i] = tf.reduce_mean( MSEs[i] + beta * tf.maximum(lam, KLDs[i]) )
 
 ## for now!!
-MSE = MSEs[0]
-KLD = KLDs[0]
-loss = losses[0]
+MSE = tf.concat(MSEs, axis=0)
+KLD = tf.concat(KLDs, axis=0)
+loss = tf.reduce_mean(losses)
 
 train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 

@@ -106,6 +106,10 @@ KLDs = [None for i in range(FLAGS.nr_gpu)]
 losses = [None for i in range(FLAGS.nr_gpu)]
 
 
+for i in range(FLAGS.nr_gpu):
+    with tf.device('/gpu:%d' % i):
+        locs[i], log_vars[i], zs[i], x_hats[i] = model(xs[i], **model_opt)
+
 saver = tf.train.Saver()
 
 def make_feed_dict(data):

@@ -87,15 +87,16 @@ def vae_model(x, z_dim):
 
 
 
-x = tf.placeholder(tf.float32, shape=(None, 128, 128, 3))
+xs = [tf.placeholder(tf.float32, shape=(None, 128, 128, 3)) for i in range(4)]
 
 model_opt = {"z_dim":100}
 model = tf.make_template('vae_model', vae_model)
 
-loc, log_var, z, x_hat = model(x, **model_opt)
+for i in range(4):
+    with tf.device('/gpu:%d' % i):
+        loc, log_var, z, x_hat = model(x, **model_opt)
 
 saver = tf.train.Saver()
-
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

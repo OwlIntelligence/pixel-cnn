@@ -112,6 +112,7 @@ with tf.Session(config=config) as sess:
     train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=128)
     data = next(train_data)
     data = np.cast[np.float32](data/255.)
-    feed_dict = {x: data}
+    ds = np.split(data, nr_gpu)
+    feed_dict = {xs[i]: ds[i] for i in range(nr_gpu)}
     xx = sess.run(x_hats, feed_dict=feed_dict)
     print(xx)

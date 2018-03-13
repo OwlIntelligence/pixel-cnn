@@ -94,8 +94,8 @@ model = tf.make_template('vae_model', vae_model)
 
 loc, log_var, z, x_hat = model(x, **model_opt)
 
-lam = 1.0
-beta = 1.0
+lam = 0.5
+beta = 100.
 
 flatten = tf.contrib.layers.flatten
 # BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
@@ -113,7 +113,7 @@ initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
 
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=128)
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=128)
 test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=False, size=128)
 
 config = tf.ConfigProto()

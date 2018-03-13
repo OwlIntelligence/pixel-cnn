@@ -85,16 +85,19 @@ def vae_model(x, z_dim):
         x_hat = generative_network(z)
         return loc, log_var, z, x_hat
 
+nr_gpu = 4
 
-
-xs = [tf.placeholder(tf.float32, shape=(None, 128, 128, 3)) for i in range(4)]
+xs = [tf.placeholder(tf.float32, shape=(None, 128, 128, 3)) for i in range(nr_gpu)]
 
 model_opt = {"z_dim":100}
 model = tf.make_template('vae_model', vae_model)
 
-for i in range(4):
+zs = [None for i in range(nr_gpu)]
+x_hats = [None for i in range(nr_gpu)]
+
+for i in range(nr_gpu):
     with tf.device('/gpu:%d' % i):
-        loc, log_var, z, x_hat = model(xs[i], **model_opt)
+        loc, log_var, zs[i], x_hats[i] = model(xs[i], **model_opt)
 
 saver = tf.train.Saver()
 
@@ -106,5 +109,4 @@ with tf.Session(config=config) as sess:
     print('restoring parameters from', ckpt_file)
     saver.restore(sess, ckpt_file)
 
-    for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=''):
-        print(v.name)
+    print(zs[i])

@@ -94,7 +94,7 @@ model = tf.make_template('vae_model', vae_model)
 
 for i in range(4):
     with tf.device('/gpu:%d' % i):
-        loc, log_var, z, x_hat = model(x, **model_opt)
+        loc, log_var, z, x_hat = model(xs[i], **model_opt)
 
 saver = tf.train.Saver()
 

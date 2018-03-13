@@ -113,3 +113,6 @@ with tf.Session(config=config) as sess:
     ckpt_file = FLAGS.save_dir + '/params_' + 'celeba' + '.ckpt'
     print('restoring parameters from', ckpt_file)
     saver.restore(sess, ckpt_file)
+
+    for t in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='generative_network'):
+        print(t.name)

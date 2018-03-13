@@ -12,6 +12,8 @@ from utils import plotting
 tf.flags.DEFINE_integer("z_dim", default_value=100, docstring="latent dimension")
 tf.flags.DEFINE_integer("batch_size", default_value=100, docstring="")
 tf.flags.DEFINE_integer("nr_gpu", default_value=1, docstring="number of GPUs")
+tf.flags.DEFINE_integer("lam", default_value=1., docstring="")
+tf.flags.DEFINE_integer("beta", default_value=1., docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")
 tf.flags.DEFINE_string("data_set", default_value="celeba128", docstring="")
@@ -105,8 +107,6 @@ MSEs = [None for i in range(FLAGS.nr_gpu)]
 KLDs = [None for i in range(FLAGS.nr_gpu)]
 losses = [None for i in range(FLAGS.nr_gpu)]
 
-lam = 0.5
-beta = 100.
 flatten = tf.contrib.layers.flatten
 
 for i in range(FLAGS.nr_gpu):
@@ -114,7 +114,7 @@ for i in range(FLAGS.nr_gpu):
         locs[i], log_vars[i], zs[i], x_hats[i] = model(xs[i], **model_opt)
         MSEs[i] = tf.reduce_sum(tf.square(flatten(xs[i])-flatten(x_hats[i])), 1)
         KLDs[i] = - 0.5 * tf.reduce_mean(1 + log_vars[i] - tf.square(locs[i]) - tf.exp(log_vars[i]), axis=-1)
-        losses[i] = tf.reduce_mean( MSEs[i] + beta * tf.maximum(lam, KLDs[i]) )
+        losses[i] = tf.reduce_mean( MSEs[i] + FLAGS.beta * tf.maximum(FLAGS.lam, KLDs[i]) )
 
 ## for now!!
 MSE = tf.concat(MSEs, axis=0)

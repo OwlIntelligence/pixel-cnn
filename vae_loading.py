@@ -12,6 +12,8 @@ from utils import plotting
 tf.flags.DEFINE_integer("z_dim", default_value=100, docstring="latent dimension")
 tf.flags.DEFINE_integer("batch_size", default_value=100, docstring="")
 tf.flags.DEFINE_integer("nr_gpu", default_value=1, docstring="number of GPUs")
+tf.flags.DEFINE_integer("lam", default_value=1., docstring="")
+tf.flags.DEFINE_integer("beta", default_value=1., docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")
 tf.flags.DEFINE_string("data_set", default_value="celeba128", docstring="")
@@ -101,14 +103,13 @@ locs = [None for i in range(FLAGS.nr_gpu)]
 log_vars = [None for i in range(FLAGS.nr_gpu)]
 zs = [None for i in range(FLAGS.nr_gpu)]
 x_hats = [None for i in range(FLAGS.nr_gpu)]
-MSEs = [None for i in range(FLAGS.nr_gpu)]
-KLDs = [None for i in range(FLAGS.nr_gpu)]
-losses = [None for i in range(FLAGS.nr_gpu)]
 
+flatten = tf.contrib.layers.flatten
 
 for i in range(FLAGS.nr_gpu):
     with tf.device('/gpu:%d' % i):
         locs[i], log_vars[i], zs[i], x_hats[i] = model(xs[i], **model_opt)
+
 
 saver = tf.train.Saver()
 

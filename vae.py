@@ -95,7 +95,7 @@ x_hat, x_log_var = generative_network(z)
 # BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
 #BCE = tf.reduce_sum(tf.square(flatten(x)-flatten(x_hat)), 1)
 NLL = 0.5 * (tf.reduce_sum(tf.square(x - x_hat) / x_log_var, [1,2,3]) + 128*128*3*tf.log(2*np.pi) + tf.reduce_sum(x_log_var, [1,2,3]))
-
+BCE = NLL
 
 KLD = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axis=-1)
 #prior_scale = 1.

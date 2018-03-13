@@ -96,8 +96,3 @@ with tf.variable_scope("vae"):
     lam = 0.5
     beta = 250.
     loss = tf.reduce_mean( MSE + beta * tf.maximum(lam, KLD) )
-
-    train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
-
-    initializer = tf.global_variables_initializer()
-    saver = tf.train.Saver()

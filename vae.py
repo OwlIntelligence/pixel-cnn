@@ -78,32 +78,40 @@ def sample_z(loc, log_var):
     z = dist.sample()
     return z
 
-with tf.variable_scope("vae"):
-    x = tf.placeholder(tf.float32, shape=(None, 128, 128, 3))
-
-    loc, log_var = inference_network(x)
-    z = sample_z(loc, log_var)
-    x_hat = generative_network(z)
-
-    flatten = tf.contrib.layers.flatten
-    # BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
-    MSE = tf.reduce_sum(tf.square(flatten(x)-flatten(x_hat)), 1)
-
-    KLD = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axis=-1)
-    #prior_scale = 1.
-    #latent_KL = 0.5 * tf.reduce_sum((tf.square(loc) + tf.square(scale))/prior_scale**2 - tf.log(tf.square(scale/prior_scale)+1e-5) - 1,1)
-
-    lam = 0.5
-    beta = 250.
-    loss = tf.reduce_mean( MSE + beta * tf.maximum(lam, KLD) )
-
-    train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
-
-    initializer = tf.global_variables_initializer()
-    saver = tf.train.Saver()
+def vae_model(x, z_dim, lam=1.0, beta=1.0):
+    with tf.variable_scope("vae"):
+        loc, log_var = inference_network(x)
+        z = sample_z(loc, log_var)
+        x_hat = generative_network(z)
+        return loc, log_var, z, x_hat
 
 
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=128)
+
+x = tf.placeholder(tf.float32, shape=(None, 128, 128, 3))
+
+model_opt = {"z_dim":100, "lam":1.0, "beta":1.0}
+model = tf.make_template('vae_model', vae_model)
+
+loc, log_var, z, x_hat = model(x, **model_opt)
+
+
+flatten = tf.contrib.layers.flatten
+# BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
+MSE = tf.reduce_sum(tf.square(flatten(x)-flatten(x_hat)), 1)
+
+KLD = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axis=-1)
+#prior_scale = 1.
+#latent_KL = 0.5 * tf.reduce_sum((tf.square(loc) + tf.square(scale))/prior_scale**2 - tf.log(tf.square(scale/prior_scale)+1e-5) - 1,1)
+loss = tf.reduce_mean( MSE + beta * tf.maximum(lam, KLD) )
+
+train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
+
+
+initializer = tf.global_variables_initializer()
+saver = tf.train.Saver()
+
+
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=128)
 test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=False, size=128)
 
 config = tf.ConfigProto()

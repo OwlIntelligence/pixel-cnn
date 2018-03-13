@@ -9,7 +9,7 @@ from utils import plotting
 
 
 #tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")
-tf.flags.DEFINE_integer("z_dim", default_value=20, docstring="latent dimension")
+tf.flags.DEFINE_integer("z_dim", default_value=100, docstring="latent dimension")
 tf.flags.DEFINE_integer("batch_size", default_value=100, docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")
@@ -91,7 +91,10 @@ z = sample_z(loc, log_var)
 x_hat = generative_network(z)
 
 flatten = tf.contrib.layers.flatten
-BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
+# BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)
+BCE = tf.reduce_sum(tf.square(flatten(x)-flatten(x_hat)), 1)
+
+
 
 KLD = - 0.5 * tf.reduce_mean(1 + log_var - tf.square(loc) - tf.exp(log_var), axis=-1)
 #prior_scale = 1.

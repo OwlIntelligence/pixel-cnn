@@ -88,7 +88,7 @@ x = tf.placeholder(tf.float32, shape=(FLAGS.batch_size, 128, 128, 3))
 
 loc, log_var = inference_network(x)
 z = sample_z(loc, log_var)
-x_hat, x_log_var = generative_network(z)
+x_hat = generative_network(z)
 
 flatten = tf.contrib.layers.flatten
 # BCE = tf.reduce_sum(tf.keras.backend.binary_crossentropy(flatten(x), flatten(x_hat)), 1)

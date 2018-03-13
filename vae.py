@@ -11,6 +11,7 @@ from utils import plotting
 #tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")
 tf.flags.DEFINE_integer("z_dim", default_value=100, docstring="latent dimension")
 tf.flags.DEFINE_integer("batch_size", default_value=100, docstring="")
+tf.flags.DEFINE_integer("nr_gpu", default_value=2, docstring="number of GPUs")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")
 tf.flags.DEFINE_string("data_set", default_value="celeba128", docstring="")
@@ -79,20 +80,42 @@ def sample_z(loc, log_var):
     return z
 
 def vae_model(x, z_dim):
-    with tf.variable_scope("vae"):
+    with tf.variable_scope("vae_model"):
         loc, log_var = inference_network(x)
         z = sample_z(loc, log_var)
         x_hat = generative_network(z)
         return loc, log_var, z, x_hat
 
 
+model_opt = {"z_dim":100}
+model = tf.make_template('vae', vae_model)
 
-x = tf.placeholder(tf.float32, shape=(None, 128, 128, 3))
+##
+xs = [tf.placeholder(tf.float32, shape=(None, 128, 128, 3)) for i in range(nr_gpu)]
 
 model_opt = {"z_dim":100}
 model = tf.make_template('vae_model', vae_model)
 
-loc, log_var, z, x_hat = model(x, **model_opt)
+locs = [None for i in range(FLAGS.nr_gpu)]
+log_vars = [None for i in range(FLAGS.nr_gpu)]
+zs = [None for i in range(FLAGS.nr_gpu)]
+x_hats = [None for i in range(FLAGS.nr_gpu)]
+
+MSEs = [None for i in range(FLAGS.nr_gpu)]
+KLDs = [None for i in range(FLAGS.nr_gpu)]
+
+
+for i in range(nr_gpu):
+    with tf.device('/gpu:%d' % i):
+        locs[i], log_vars[i], zs[i], x_hats[i] = model(xs[i], **model_opt)
+
+with tf.device('/gpu:%d' % 0):
+    loc = tf.concat(locs, axis=0)
+    log_var = tf.concat(log_vars, axis=0)
+    z = tf.concat(zs, axis=0)
+    x_hat = tf.concat(x_hats, axis=0)
+
+##
 
 lam = 0.5
 beta = 100.
@@ -113,7 +136,7 @@ initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
 
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=128)
+train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=128)
 test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=False, size=128)
 
 config = tf.ConfigProto()

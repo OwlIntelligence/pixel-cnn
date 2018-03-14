@@ -118,6 +118,12 @@ for i in range(FLAGS.nr_gpu):
 
 saver = tf.train.Saver(var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='vae'))
 
+def make_feed_dict(data):
+    data = np.cast[np.float32](data/255.)
+    ds = np.split(data, FLAGS.nr_gpu)
+    for i in range(FLAGS.nr_gpu):
+        feed_dict = { xs[i]:ds[i] for i in range(FLAGS.nr_gpu) }
+    return feed_dict
 
 def load_vae(saver):
 

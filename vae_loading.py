@@ -131,7 +131,7 @@ def make_feed_dict(data, mgen=None):
             feed_dict.update({ ms[i]:masks[i] for i in range(FLAGS.nr_gpu) })
     return feed_dict
 
-def load_vae(saver):
+def load_vae(sess, saver):
 
     ckpt_file = FLAGS.save_dir + '/params_' + 'celeba' + '.ckpt'
     print('restoring parameters from', ckpt_file)

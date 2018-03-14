@@ -110,7 +110,6 @@ KLDs = [None for i in range(FLAGS.nr_gpu)]
 losses = [None for i in range(FLAGS.nr_gpu)]
 grads = [None for i in range(FLAGS.nr_gpu)]
 
-grads = []
 
 flatten = tf.contrib.layers.flatten
 

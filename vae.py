@@ -118,15 +118,13 @@ flatten = tf.contrib.layers.flatten
 for i in range(FLAGS.nr_gpu):
     with tf.device('/gpu:%d' % i):
         locs[i], log_vars[i], zs[i], x_hats[i] = model(xs[i], **model_opt)
-all_params = tf.trainable_variables()        
+all_params = tf.trainable_variables()
 for i in range(FLAGS.nr_gpu):
     with tf.device('/gpu:%d' % i):
         MSEs[i] = tf.reduce_sum(tf.square(flatten(xs[i])-flatten(x_hats[i])), 1)
         KLDs[i] = - 0.5 * tf.reduce_mean(1 + log_vars[i] - tf.square(locs[i]) - tf.exp(log_vars[i]), axis=-1)
         losses[i] = MSEs[i] + FLAGS.beta * tf.maximum(FLAGS.lam, KLDs[i])
-
         grads[i] = tf.gradients(losses[i], all_params, colocate_gradients_with_ops=True)
-
 
 with tf.device('/gpu:0'):
     for i in range(1, FLAGS.nr_gpu):
@@ -134,8 +132,8 @@ with tf.device('/gpu:0'):
         for j in range(len(grads[0])):
             grads[0][j] += grads[i][j]
 
-    MSE = tf.reduce_mean(tf.concat(MSEs, axis=0))
-    KLD = tf.reduce_mean(tf.concat(KLDs, axis=0))
+    MSE = tf.concat(MSEs, axis=0)
+    KLD = tf.concat(KLDs, axis=0)
 
     train_step = adam_updates(all_params, grads[0], lr=0.0001)
 

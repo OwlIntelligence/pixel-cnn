@@ -1,24 +1,23 @@
-import os
-import sys
-import json
-import argparse
-import time
+import vae_loading as v
 
-import numpy as np
-import tensorflow as tf
 
-from pixel_cnn_pp import nn
-from pixel_cnn_pp.model import model_spec
-from utils import plotting
 
-# self define modules
-from configs import config_args, configs
-from utils.mask import *
+test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size*FLAGS.nr_gpu, shuffle=False, size=128)
 
-def test_random_masks():
-    mgen = RandomRectangleMaskGenerator(8,8)
-    masks = mgen.gen(5)
-    for m in masks:
-        print(m)
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+with tf.Session(config=config) as sess:
 
-test_random_masks()
+    v.load_vae(v.saver)
+
+    test_mgen = m.CenterMaskGenerator(128, 128, 0.5)
+
+    data = next(test_data)
+    feed_dict = v.make_feed_dict(data, test_mgen)
+    sample_x = sess.run(v.x_hats, feed_dict=feed_dict)
+    sample_x = np.concatenate(sample_x, axis=0)
+    test_data.reset()
+
+    img_tile = plotting.img_tile(sample_x[:25], aspect_ratio=1.0, border_color=1.0, stretch=True)
+    img = plotting.plot_img(img_tile, title=v.FLAGS.data_set + ' samples')
+    plotting.plt.savefig(os.path.join("plots",'%s_vae_complete.png' % (v.FLAGS.data_set)))

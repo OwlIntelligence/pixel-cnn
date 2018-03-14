@@ -118,11 +118,16 @@ for i in range(FLAGS.nr_gpu):
 
 saver = tf.train.Saver(var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='vae'))
 
-def make_feed_dict(data):
+def make_feed_dict(data, mgen=None):
     data = np.cast[np.float32](data/255.)
     ds = np.split(data, FLAGS.nr_gpu)
     for i in range(FLAGS.nr_gpu):
         feed_dict = { xs[i]:ds[i] for i in range(FLAGS.nr_gpu) }
+    if mgen is not None:
+        masks = mgen.gen(data.shape[0])
+        masks = np.split(masks, FLAGS.nr_gpu)
+        for i in range(FLAGS.nr_gpu):
+            feed_dict.update({ ms[i]:masks[i] for i in range(FLAGS.nr_gpu) })
     return feed_dict
 
 def load_vae(saver):
@@ -146,3 +151,15 @@ with tf.Session(config=config) as sess:
     feed_dict = make_feed_dict(data)
     outputs = sess.run(zs, feed_dict=feed_dict)
     print(outputs)
+
+    test_mgen = m.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.5)
+
+    data = next(test_data)
+    feed_dict = make_feed_dict(data, test_mgen)
+    sample_x = sess.run(x_hats, feed_dict=feed_dict)
+    ample_x = np.concatenate(sample_x, axis=0)
+    test_data.reset()
+
+    img_tile = plotting.img_tile(sample_x[:25], aspect_ratio=1.0, border_color=1.0, stretch=True)
+    img = plotting.plot_img(img_tile, title=FLAGS.data_set + ' samples')
+    plotting.plt.savefig(os.path.join(plots,'%s_vae_complete.png' % (FLAGS.data_set)))

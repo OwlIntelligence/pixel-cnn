@@ -18,6 +18,7 @@ tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/Ce
 tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")
 tf.flags.DEFINE_string("data_set", default_value="celeba128", docstring="")
 tf.flags.DEFINE_boolean("load_params", default_value=False, docstring="load_parameters from save_dir?")
+tf.flags.DEFINE_boolean("debug", default_value=False, docstring="is debugging?")
 
 FLAGS = tf.flags.FLAGS
 
@@ -134,8 +135,10 @@ def make_feed_dict(data):
     return feed_dict
 
 
-
-train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=128)
+if FLAGS.debug:
+    train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=128)
+else:
+    train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=128)
 test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=False, size=128)
 
 config = tf.ConfigProto()

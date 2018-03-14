@@ -96,7 +96,7 @@ def vae_model(x, z_dim):
 model_opt = {"z_dim": FLAGS.z_dim}
 model = tf.make_template('vae', vae_model)
 
-with tf.variable_scope("vae_inputs")
+with tf.variable_scope("vae_inputs"):
     xs = [tf.placeholder(tf.float32, shape=(None, 128, 128, 3)) for i in range(FLAGS.nr_gpu)]
     ms = [tf.placeholder_with_default(np.ones((FLAGS.batch_size, 128, 128), dtype=np.float32), shape=(None, 128, 128)) for i in range(FLAGS.nr_gpu)]
     mxs = tf.multiply(xs, tf.stack([ms for k in range(3)], axis=-1))

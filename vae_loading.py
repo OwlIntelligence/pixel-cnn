@@ -144,5 +144,5 @@ with tf.Session(config=config) as sess:
 
     data = next(test_data)
     feed_dict = make_feed_dict(data)
-    outputs = sess.run(z, feed_dict=feed_dict)
+    outputs = sess.run(zs, feed_dict=feed_dict)
     print(outputs)

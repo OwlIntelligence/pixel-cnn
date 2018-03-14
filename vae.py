@@ -173,6 +173,7 @@ with tf.Session(config=config) as sess:
         saver.restore(sess, ckpt_file)
 
     train_mgen = m.RandomRectangleMaskGenerator(128, 128, max_ratio=0.75)
+    test_mgen = m.CenterMaskGenerator(128, 128, 0.5)
 
     max_num_epoch = 1000
     for epoch in range(max_num_epoch):
@@ -204,7 +205,7 @@ with tf.Session(config=config) as sess:
             saver.save(sess, FLAGS.save_dir + '/params_' + 'celeba' + '.ckpt')
 
             data = next(test_data)
-            feed_dict = make_feed_dict(data)
+            feed_dict = make_feed_dict(data, test_mgen)
             sample_x = sess.run(x_hats, feed_dict=feed_dict)
             sample_x = np.concatenate(sample_x, axis=0)
             test_data.reset()

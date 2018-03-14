@@ -158,7 +158,7 @@ with tf.Session(config=config) as sess:
     data = next(test_data)
     feed_dict = make_feed_dict(data, test_mgen)
     sample_x = sess.run(x_hats, feed_dict=feed_dict)
-    ample_x = np.concatenate(sample_x, axis=0)
+    sample_x = np.concatenate(sample_x, axis=0)
     test_data.reset()
 
     img_tile = plotting.img_tile(sample_x[:25], aspect_ratio=1.0, border_color=1.0, stretch=True)

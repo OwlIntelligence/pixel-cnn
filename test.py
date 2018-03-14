@@ -4,6 +4,7 @@ import tensorflow as tf
 import time
 import data.celeba_data as celeba_data
 import vae_loading as v
+import utils.mask as m
 
 
 

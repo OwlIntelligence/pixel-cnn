@@ -11,7 +11,7 @@ from pixel_cnn_pp.nn import adam_updates
 
 #tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")
 tf.flags.DEFINE_integer("z_dim", default_value=100, docstring="latent dimension")
-tf.flags.DEFINE_integer("batch_size", default_value=50, docstring="")
+tf.flags.DEFINE_integer("batch_size", default_value=25, docstring="")
 tf.flags.DEFINE_integer("nr_gpu", default_value=1, docstring="number of GPUs")
 tf.flags.DEFINE_float("lam", default_value=1., docstring="")
 tf.flags.DEFINE_float("beta", default_value=1., docstring="")
@@ -150,10 +150,10 @@ def make_feed_dict(data):
 
 
 if FLAGS.debug:
-    train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=True, size=128)
+    train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size*FLAGS.nr_gpu, shuffle=True, size=128)
 else:
-    train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size, shuffle=True, size=128)
-test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size, shuffle=False, size=128)
+    train_data = celeba_data.DataLoader(FLAGS.data_dir, 'train', FLAGS.batch_size*FLAGS.nr_gpu, shuffle=True, size=128)
+test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size*FLAGS.nr_gpu, shuffle=False, size=128)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

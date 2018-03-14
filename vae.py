@@ -9,10 +9,10 @@ from utils import plotting
 from pixel_cnn_pp.nn import adam_updates
 
 
-#tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")
 tf.flags.DEFINE_integer("z_dim", default_value=100, docstring="latent dimension")
 tf.flags.DEFINE_integer("batch_size", default_value=25, docstring="")
 tf.flags.DEFINE_integer("nr_gpu", default_value=1, docstring="number of GPUs")
+tf.flags.DEFINE_integer("save_interval", default_value=5, docstring="")
 tf.flags.DEFINE_float("lam", default_value=1., docstring="")
 tf.flags.DEFINE_float("beta", default_value=1., docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
@@ -79,10 +79,11 @@ def inference_network(x):
     return loc, log_var
 
 def sample_z(loc, log_var):
-    scale = tf.sqrt(tf.exp(log_var))
-    dist = tf.distributions.Normal(loc=loc, scale=scale)
-    z = dist.sample()
-    return z
+    with tf.variable_scope("inference_network"):
+        scale = tf.sqrt(tf.exp(log_var))
+        dist = tf.distributions.Normal(loc=loc, scale=scale)
+        z = dist.sample()
+        return z
 
 def vae_model(x, z_dim):
     with tf.variable_scope("vae_model"):
@@ -92,14 +93,14 @@ def vae_model(x, z_dim):
         return loc, log_var, z, x_hat
 
 
-model_opt = {"z_dim":100}
+model_opt = {"z_dim": FLAGS.z_dim}
 model = tf.make_template('vae', vae_model)
 
-##
-xs = [tf.placeholder(tf.float32, shape=(None, 128, 128, 3)) for i in range(FLAGS.nr_gpu)]
+with tf.variable_scope("vae_inputs")
+    xs = [tf.placeholder(tf.float32, shape=(None, 128, 128, 3)) for i in range(FLAGS.nr_gpu)]
+    ms = [tf.placeholder_with_default(np.ones((FLAGS.batch_size, 128, 128), dtype=np.float32), shape=(None, 128, 128)) for i in range(FLAGS.nr_gpu)]
+    mxs = tf.multiply(xs, tf.stack([ms for k in range(3)], axis=-1))
 
-model_opt = {"z_dim":100}
-model = tf.make_template('vae_model', vae_model)
 
 locs = [None for i in range(FLAGS.nr_gpu)]
 log_vars = [None for i in range(FLAGS.nr_gpu)]
@@ -113,17 +114,15 @@ grads = [None for i in range(FLAGS.nr_gpu)]
 
 flatten = tf.contrib.layers.flatten
 
-
-
 for i in range(FLAGS.nr_gpu):
     with tf.device('/gpu:%d' % i):
-        locs[i], log_vars[i], zs[i], x_hats[i] = model(xs[i], **model_opt)
+        locs[i], log_vars[i], zs[i], x_hats[i] = model(mxs[i], **model_opt)
 all_params = tf.trainable_variables()
 for i in range(FLAGS.nr_gpu):
     with tf.device('/gpu:%d' % i):
-        MSEs[i] = tf.reduce_sum(tf.square(flatten(xs[i])-flatten(x_hats[i])), 1)
+        MSEs[i] = tf.reduce_sum(tf.square(flatten(mxs[i])-flatten(x_hats[i])), 1)
         KLDs[i] = - 0.5 * tf.reduce_mean(1 + log_vars[i] - tf.square(locs[i]) - tf.exp(log_vars[i]), axis=-1)
-        losses[i] = MSEs[i] + FLAGS.beta * tf.maximum(FLAGS.lam, KLDs[i])
+        losses[i] = tf.reduce_mean(MSEs[i] + FLAGS.beta * tf.maximum(FLAGS.lam, KLDs[i]))
         grads[i] = tf.gradients(losses[i], all_params, colocate_gradients_with_ops=True)
 
 with tf.device('/gpu:0'):
@@ -137,10 +136,7 @@ with tf.device('/gpu:0'):
 
     train_step = adam_updates(all_params, grads[0], lr=0.0001)
 
-
     loss = losses[0] / FLAGS.nr_gpu
-
-# train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
@@ -153,6 +149,7 @@ def make_feed_dict(data):
     return feed_dict
 
 
+
 if FLAGS.debug:
     train_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size*FLAGS.nr_gpu, shuffle=True, size=128)
 else:
@@ -162,6 +159,11 @@ test_data = celeba_data.DataLoader(FLAGS.data_dir, 'valid', FLAGS.batch_size*FLA
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
+
+    for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=''):
+        print(v.name)
+    quit()
+
     # init
     sess.run(initializer)
 
@@ -195,7 +197,7 @@ with tf.Session(config=config) as sess:
         print("train loss:{0:.3f}, train mse:{1:.3f}, train kld:{2:.3f}".format(train_loss, train_mse, train_kld))
         print("test loss:{0:.3f}, test mse:{1:.3f}, test kld:{2:.3f}".format(test_loss, test_mse, test_kld))
 
-        if epoch % 10==0:
+        if epoch % FLAGS.save_interval == 0:
 
             saver.save(sess, FLAGS.save_dir + '/params_' + 'celeba' + '.ckpt')
 

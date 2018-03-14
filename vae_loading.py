@@ -7,6 +7,7 @@ from tensorflow.contrib.framework.python.ops import arg_scope
 import pixel_cnn_pp.nn as nn
 from utils import plotting
 from pixel_cnn_pp.nn import adam_updates
+import utils.mask as m
 
 
 tf.flags.DEFINE_integer("z_dim", default_value=100, docstring="latent dimension")

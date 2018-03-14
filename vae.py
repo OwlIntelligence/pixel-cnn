@@ -131,8 +131,8 @@ with tf.device('/gpu:0'):
         for j in range(len(grads[0])):
             grads[0][j] += grads[i][j]
 
-    MSE = tf.concat(MSEs, axis=0)
-    KLD = tf.concat(KLDs, axis=0)
+    MSE = tf.reduce_mean(tf.concat(MSEs, axis=0))
+    KLD = tf.reduce_mean(tf.concat(KLDs, axis=0))
 
     train_step = adam_updates(all_params, grads[0], lr=0.0001)
 

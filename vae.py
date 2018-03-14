@@ -137,7 +137,7 @@ with tf.device('/gpu:0'):
     train_step = adam_updates(all_params, grads[0], lr=0.0001)
 
 
-loss = losses[0]
+    loss = losses[0] / FLAGS.nr_gpu
 
 # train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 

@@ -158,10 +158,6 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
 
-    for v in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='vae'):
-        print(v.name)
-    quit()
-
     # init
     sess.run(initializer)
 

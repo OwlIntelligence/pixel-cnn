@@ -10,7 +10,7 @@ from utils import plotting
 
 #tf.flags.DEFINE_integer("nr_mix", default_value=10, docstring="number of logistic mixture components")
 tf.flags.DEFINE_integer("z_dim", default_value=100, docstring="latent dimension")
-tf.flags.DEFINE_integer("batch_size", default_value=100, docstring="")
+tf.flags.DEFINE_integer("batch_size", default_value=50, docstring="")
 tf.flags.DEFINE_integer("nr_gpu", default_value=1, docstring="number of GPUs")
 tf.flags.DEFINE_float("lam", default_value=1., docstring="")
 tf.flags.DEFINE_float("beta", default_value=1., docstring="")

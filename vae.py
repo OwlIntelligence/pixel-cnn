@@ -131,12 +131,8 @@ with tf.device('/gpu:0'):
         for j in range(len(grads[0])):
             grads[0][j] += grads[i][j]
 
+    train_step = adam_updates(all_params, grads[0], lr=0.0001)
 
-train_step = adam_updates(all_params, grads[0], lr=0.0001)
-
-## for now!!
-MSE = tf.concat(MSEs, axis=0)
-KLD = tf.concat(KLDs, axis=0)
 
 loss = losses[0]
 
@@ -176,7 +172,7 @@ with tf.Session(config=config) as sess:
         ls, mses, klds = [], [], []
         for data in train_data:
             feed_dict = make_feed_dict(data)
-            l, mse, kld, _ = sess.run([loss, MSE, KLD, train_step], feed_dict=feed_dict)
+            l, mse, kld, _ = sess.run([loss, loss, loss, train_step], feed_dict=feed_dict)
             ls.append(l)
             mses.append(mse)
             klds.append(kld)
@@ -185,7 +181,7 @@ with tf.Session(config=config) as sess:
         ls, mses, klds = [], [], []
         for data in test_data:
             feed_dict = make_feed_dict(data)
-            l, mse, kld = sess.run([loss, MSE, KLD], feed_dict=feed_dict)
+            l, mse, kld = sess.run([loss, loss, loss], feed_dict=feed_dict)
             ls.append(l)
             mses.append(mse)
             klds.append(kld)

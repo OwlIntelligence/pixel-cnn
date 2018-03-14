@@ -7,6 +7,7 @@ from tensorflow.contrib.framework.python.ops import arg_scope
 import pixel_cnn_pp.nn as nn
 from utils import plotting
 from pixel_cnn_pp.nn import adam_updates
+import utils.mask as m
 
 
 tf.flags.DEFINE_integer("z_dim", default_value=100, docstring="latent dimension")
@@ -139,11 +140,16 @@ with tf.device('/gpu:0'):
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
-def make_feed_dict(data):
+def make_feed_dict(data, mgen=None):
     data = np.cast[np.float32](data/255.)
     ds = np.split(data, FLAGS.nr_gpu)
     for i in range(FLAGS.nr_gpu):
         feed_dict = { xs[i]:ds[i] for i in range(FLAGS.nr_gpu) }
+    if mgen is not None:
+        masks = mgen.gen(data.shape[0])
+        masks = np.split(masks, FLAGS.nr_gpu)
+        for i in range(FLAGS.nr_gpu):
+            feed_dict.update({ ms[i]:masks[i] for i in range(FLAGS.nr_gpu) })
     return feed_dict
 
 
@@ -166,12 +172,14 @@ with tf.Session(config=config) as sess:
         print('restoring parameters from', ckpt_file)
         saver.restore(sess, ckpt_file)
 
+    train_mgen = m.RandomRectangleMaskGenerator(128, 128, max_ratio=0.75)
+
     max_num_epoch = 1000
     for epoch in range(max_num_epoch):
         tt = time.time()
         ls, mses, klds = [], [], []
         for data in train_data:
-            feed_dict = make_feed_dict(data)
+            feed_dict = make_feed_dict(data, train_mgen)
             l, mse, kld, _ = sess.run([loss, MSE, KLD, train_step], feed_dict=feed_dict)
             ls.append(l)
             mses.append(mse)

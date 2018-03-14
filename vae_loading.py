@@ -153,7 +153,7 @@ with tf.Session(config=config) as sess:
     outputs = sess.run(zs, feed_dict=feed_dict)
     print(outputs)
 
-    test_mgen = m.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.5)
+    test_mgen = m.CenterMaskGenerator(128, 128, 0.5)
 
     data = next(test_data)
     feed_dict = make_feed_dict(data, test_mgen)

@@ -113,14 +113,17 @@ grads = [None for i in range(FLAGS.nr_gpu)]
 
 flatten = tf.contrib.layers.flatten
 
-all_params = tf.trainable_variables()
+
 
 for i in range(FLAGS.nr_gpu):
     with tf.device('/gpu:%d' % i):
         locs[i], log_vars[i], zs[i], x_hats[i] = model(xs[i], **model_opt)
+all_params = tf.trainable_variables()        
+for i in range(FLAGS.nr_gpu):
+    with tf.device('/gpu:%d' % i):
         MSEs[i] = tf.reduce_sum(tf.square(flatten(xs[i])-flatten(x_hats[i])), 1)
         KLDs[i] = - 0.5 * tf.reduce_mean(1 + log_vars[i] - tf.square(locs[i]) - tf.exp(log_vars[i]), axis=-1)
-        losses[i] = tf.reduce_mean( MSEs[i] + FLAGS.beta * tf.maximum(FLAGS.lam, KLDs[i]) )
+        losses[i] = MSEs[i] + FLAGS.beta * tf.maximum(FLAGS.lam, KLDs[i])
 
         grads[i] = tf.gradients(losses[i], all_params, colocate_gradients_with_ops=True)
 

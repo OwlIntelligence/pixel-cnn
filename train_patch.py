@@ -266,17 +266,9 @@ def make_feed_dict(data, init=False, shs=None):
     if init:
         feed_dict = {x_init: x}
         if args.global_conditional:
-            feed_dict.update({gh_init: })
+            feed_dict.update({gh_init: np.random.normal(size=(args.batch_size, args.global_latent_dim))})
         if args.spatial_conditional:
             feed_dict.update({sh_init: g})
-
-        if gh_init is not None:
-            feed_dict.update({gh_init: y})
-        if sh_init is not None:
-            h = x.copy()
-            h = uf.mask_inputs(h, train_mgen)
-            h = np.concatenate([g, h], axis=-1)
-            feed_dict.update({sh_init: h})
     else:
         x = np.split(x, args.nr_gpu)
         g = np.split(g, args.nr_gpu)

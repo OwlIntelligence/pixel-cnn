@@ -269,7 +269,7 @@ def make_feed_dict(data, init=False, **params):
     # spatial conditioning
     if spatial_conditional:
         spatial_lv = []
-        if use_coordinates in params and params['use_coordinates']:
+        if 'use_coordinates' in params and params['use_coordinates']:
             spatial_lv.append(g)
         spatial_lv = np.concatenate(spatial_lv, axis=-1)
 

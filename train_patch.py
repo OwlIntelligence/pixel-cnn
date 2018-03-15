@@ -258,36 +258,6 @@ def sample_from_model(sess, data=None, **params):
 
 
 
-
-# def sample_from_model(sess, data=None, zs=None):
-#     if data is not None and type(data) is not tuple:
-#         x = data
-#     y = zs
-#     x = np.cast[np.float32]((x - 127.5) / 127.5)
-#     g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
-#     xg = np.concatenate([x, g], axis=-1)
-#     xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
-#     x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
-#     x = np.split(x, args.nr_gpu)
-#     g = np.split(g, args.nr_gpu)
-#     y = np.split(y, args.nr_gpu)
-#
-#     if args.spatial_conditional:
-#         feed_dict = {shs[i]: g[i] for i in range(args.nr_gpu)}
-#     if args.global_conditional:
-#         feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
-#
-#     x_gen = [np.zeros_like(x[0]) for i in range(args.nr_gpu)]
-#
-#     for yi in range(obs_shape[0]):
-#         for xi in range(obs_shape[1]):
-#             feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
-#             new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
-#             for i in range(args.nr_gpu):
-#                 x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
-#     return np.concatenate(x_gen, axis=0)
-
-
 # init & save
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()

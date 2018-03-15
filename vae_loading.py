@@ -25,6 +25,8 @@ tf.flags.DEFINE_boolean("debug", default_value=False, docstring="is debugging?")
 FLAGS = tf.flags.FLAGS
 
 FLAGS.batch_size = 16
+FLAGS.nr_gpu = 4
+FLAGS.save_dir = "/data/ziz/jxu/models/vae-128-masked"
 
 kernel_initializer = None #tf.random_normal_initializer()
 

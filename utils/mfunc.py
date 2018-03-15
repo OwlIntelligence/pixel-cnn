@@ -70,6 +70,14 @@ def tile_crop_images(input, output_size):
     y = np.array(y)
     return x, y
 
+
+def find_next_missing_pixel(masks):
+    pass
+
+def find_maximally_conditioned_window(mask, cur_coordinate):
+    pass
+
+
 ## https://github.com/aizvorski/video-quality/blob/master/psnr.py
 
 def psnr(img1, img2):

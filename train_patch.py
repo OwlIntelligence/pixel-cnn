@@ -258,6 +258,8 @@ def sample_from_model(sess, data=None, **params):
 
 
 
+
+
 # init & save
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()

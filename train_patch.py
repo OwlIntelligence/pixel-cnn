@@ -256,7 +256,7 @@ def make_feed_dict(data, init=False, zs=None):
     else:
         x = data
         y = None
-        
+
     y = zs
 
     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
@@ -323,7 +323,7 @@ with tf.Session(config=config) as sess:
         for d in train_data:
             feed_dict = vl.make_feed_dict(d)
             zs = sess.run(vl.zs, feed_dict=feed_dict)
-            feed_dict = make_feed_dict(d, shs=zs)
+            feed_dict = make_feed_dict(d, zs=zs)
             # forward/backward/update model on each gpu
             lr *= args.lr_decay
             feed_dict.update({ tf_lr: lr })
@@ -336,7 +336,7 @@ with tf.Session(config=config) as sess:
         for d in test_data:
             feed_dict = vl.make_feed_dict(d)
             zs = sess.run(vl.zs, feed_dict=feed_dict)
-            feed_dict = make_feed_dict(d, shs=zs)
+            feed_dict = make_feed_dict(d, zs=zs)
             l = sess.run(bits_per_dim_test, feed_dict)
             test_losses.append(l)
         test_loss_gen = np.mean(test_losses)

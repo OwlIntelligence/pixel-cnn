@@ -24,7 +24,7 @@ tf.flags.DEFINE_boolean("debug", default_value=False, docstring="is debugging?")
 
 FLAGS = tf.flags.FLAGS
 
-
+FLAGS.batch_size = 16
 
 kernel_initializer = None #tf.random_normal_initializer()
 

@@ -350,7 +350,10 @@ with tf.Session(config=config) as sess:
             else:
                 print('initializing the model...')
                 sess.run(initializer)
-                feed_dict = make_feed_dict(train_data.next(args.init_batch_size), init=True)  # manually retrieve exactly init_batch_size examples
+                d = train_data.next(args.init_batch_size)
+                feed_dict = vl.make_feed_dict(d)
+                zs = sess.run(vl.zs, feed_dict=feed_dict)
+                feed_dict = make_feed_dict(d, init=True, use_coordinates=True, z=np.concatenate(zs, axis=0)))  # manually retrieve exactly init_batch_size examples
                 sess.run(init_pass, feed_dict)
             print('starting training')
 

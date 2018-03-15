@@ -337,7 +337,7 @@ with tf.Session(config=config) as sess:
                 print('initializing the model...')
                 sess.run(initializer)
                 d = train_data.next(args.init_batch_size)
-                zs = np.random.uniform(size=(d.shape[0], v.FLAGS.z_dim))
+                zs = np.random.uniform(size=(d.shape[0], vl.FLAGS.z_dim))
                 feed_dict = make_feed_dict(d, init=True, use_coordinates=True, z=zs)  # manually retrieve exactly init_batch_size examples
                 sess.run(init_pass, feed_dict)
             print('starting training')

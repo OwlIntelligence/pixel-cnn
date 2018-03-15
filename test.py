@@ -28,8 +28,7 @@ with tf.Session(config=config) as sess:
 
 
     feed_dict = v.make_feed_dict(data, test_mgen)
-    #sample_x = sess.run(v.x_hats, feed_dict=feed_dict)
-    sample_x = sess.run(v.zs, feed_dict=feed_dict)
+    sample_x = sess.run(v.x_hats, feed_dict=feed_dict)
     sample_x = np.concatenate(sample_x, axis=0)
     print(sample_x)
     quit()

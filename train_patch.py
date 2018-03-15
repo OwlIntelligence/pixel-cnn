@@ -246,9 +246,6 @@ saver = tf.train.Saver()
 
 
 def make_feed_dict(data, init=False, **params):
-    for name, value in params.items():
-        eval("{0}={1}".format(name, value))
-        print(("{0}={1}".format(name, value)))
     if type(data) is tuple:
         x,y = data
     else:
@@ -256,7 +253,7 @@ def make_feed_dict(data, init=False, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
-    if use_coordinates is not None and use_coordinates:
+    if use_coordinates in params and params['use_coordinates']:
         g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
         xg = np.concatenate([x, g], axis=-1)
         xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
@@ -265,14 +262,14 @@ def make_feed_dict(data, init=False, **params):
     # global conditioning
     if args.global_conditional:
         global_lv = []
-        if z is not None:
-            global_lv.append(z)
+        if 'z' in params:
+            global_lv.append(params['z'])
         global_lv = np.concatenate(global_lv, axis=-1)
 
     # spatial conditioning
     if spatial_conditional:
         spatial_lv = []
-        if use_coordinates is not None and use_coordinates:
+        if use_coordinates in params and params['use_coordinates']:
             spatial_lv.append(g)
         spatial_lv = np.concatenate(spatial_lv, axis=-1)
 

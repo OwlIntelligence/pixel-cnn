@@ -323,7 +323,7 @@ with tf.Session(config=config) as sess:
         for d in train_data:
             feed_dict = vl.make_feed_dict(d)
             zs = sess.run(vl.zs, feed_dict=feed_dict)
-            feed_dict = make_feed_dict(d, zs=zs)
+            feed_dict = make_feed_dict(d, zs=np.concatenate(zs, axis=0))
             # forward/backward/update model on each gpu
             lr *= args.lr_decay
             feed_dict.update({ tf_lr: lr })

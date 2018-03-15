@@ -298,13 +298,6 @@ config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
 
     vl.load_vae(sess, vl.saver)
-    data = next(test_data)
-    feed_dict = vl.make_feed_dict(data)
-    sample_x = sess.run(vl.x_hats, feed_dict=feed_dict)
-    sample_x = np.concatenate(sample_x, axis=0)
-    print(sample_x)
-    quit()
-
 
     for epoch in range(args.max_epochs):
         begin = time.time()
@@ -326,7 +319,9 @@ with tf.Session(config=config) as sess:
         # train for one epoch
         train_losses = []
         for d in train_data:
-            feed_dict = make_feed_dict(d)
+            feed_dict = vl.make_feed_dict(d)
+            zs = sess.run(vl.zs, feed_dict=feed_dict)
+            feed_dict = make_feed_dict(d, shs=zs)
             # forward/backward/update model on each gpu
             lr *= args.lr_decay
             feed_dict.update({ tf_lr: lr })
@@ -337,7 +332,9 @@ with tf.Session(config=config) as sess:
         # compute likelihood over test data
         test_losses = []
         for d in test_data:
-            feed_dict = make_feed_dict(d)
+            feed_dict = vl.make_feed_dict(d)
+            zs = sess.run(vl.zs, feed_dict=feed_dict)
+            feed_dict = make_feed_dict(d, shs=zs)
             l = sess.run(bits_per_dim_test, feed_dict)
             test_losses.append(l)
         test_loss_gen = np.mean(test_losses)

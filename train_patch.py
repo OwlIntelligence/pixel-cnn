@@ -250,12 +250,14 @@ initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
 
-def make_feed_dict(data, init=False, shs=None):
+def make_feed_dict(data, init=False, zs=None):
     if type(data) is tuple:
         x,y = data
     else:
         x = data
         y = None
+        
+    y = zs
 
     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
     g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])

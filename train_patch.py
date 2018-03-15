@@ -246,6 +246,8 @@ saver = tf.train.Saver()
 
 
 def make_feed_dict(data, init=False, **params):
+    for name, value in params.item():
+        eval("{0}={1}".format(name, value))
     if type(data) is tuple:
         x,y = data
     else:

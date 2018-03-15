@@ -278,11 +278,7 @@ def make_feed_dict(data, init=False, zs=None):
             y = np.split(y, args.nr_gpu)
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
         if args.spatial_conditional:
-            h = [x[i].copy() for i in range(args.nr_gpu)]
-            for i in range(args.nr_gpu):
-                h[i] = uf.mask_inputs(h[i], train_mgen)
-                h[i] = np.concatenate([g[i], h[i]], axis=-1)
-            feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
+            feed_dict.update({shs[i]: g[i] for i in range(args.nr_gpu)})
         if args.global_conditional:
             feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
     return feed_dict

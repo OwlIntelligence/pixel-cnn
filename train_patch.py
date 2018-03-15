@@ -23,7 +23,7 @@ import utils.mask as um
 import utils.mfunc as uf
 import utils.grid as grid
 
-import vae_loading as v
+import vae_loading as vl
 
 # self define modules
 from configs import config_args, configs
@@ -295,10 +295,10 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
 
-    v.load_vae(sess, v.saver)
+    vl.load_vae(sess, vl.saver)
     data = next(test_data)
-    feed_dict = v.make_feed_dict(data)
-    sample_x = sess.run(v.x_hats, feed_dict=feed_dict)
+    feed_dict = vl.make_feed_dict(data)
+    sample_x = sess.run(vl.x_hats, feed_dict=feed_dict)
     sample_x = np.concatenate(sample_x, axis=0)
     print(sample_x)
     quit()

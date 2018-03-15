@@ -253,7 +253,7 @@ def make_feed_dict(data, init=False, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
-    if use_coordinates in params and params['use_coordinates']:
+    if 'use_coordinates' in params and params['use_coordinates']:
         g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
         xg = np.concatenate([x, g], axis=-1)
         xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))

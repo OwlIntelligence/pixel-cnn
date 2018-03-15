@@ -23,7 +23,7 @@ import utils.mask as um
 import utils.mfunc as uf
 import utils.grid as grid
 
-import vae_loading as vl
+
 
 # self define modules
 from configs import config_args, configs
@@ -290,6 +290,8 @@ if not os.path.exists(args.save_dir):
     os.makedirs(args.save_dir)
 test_bpd = []
 lr = args.learning_rate
+
+import vae_loading as vl
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

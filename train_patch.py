@@ -227,6 +227,8 @@ def sample_from_model(sess, data=None, zs=None):
     if args.global_conditional:
         feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
 
+    x_gen = [np.zeros_like(x[0]) for i in range(args.nr_gpu)]
+
     for yi in range(obs_shape[0]):
         for xi in range(obs_shape[1]):
             feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})

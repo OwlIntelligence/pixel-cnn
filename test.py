@@ -20,9 +20,9 @@ with tf.Session(config=config) as sess:
     test_mgen = m.CenterMaskGenerator(128, 128, 0.75)
 
     data = next(test_data)
-    data_ori = uf.mask_inputs(data, test_mgen)[:,:,:,:3]
+    data = uf.mask_inputs(data, test_mgen)[:,:,:,:3]
 
-    img_tile = plotting.img_tile(data_ori[:25], aspect_ratio=1.0, border_color=1.0, stretch=True)
+    img_tile = plotting.img_tile(data[:25], aspect_ratio=1.0, border_color=1.0, stretch=True)
     img = plotting.plot_img(img_tile, title=v.FLAGS.data_set + ' samples')
     plotting.plt.savefig(os.path.join("plots",'%s_vae_original.png' % (v.FLAGS.data_set)))
 

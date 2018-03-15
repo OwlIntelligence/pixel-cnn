@@ -209,6 +209,55 @@ train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_rat
 test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
 sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.875)
 
+def sample_from_model(sess, data=None, **params):
+    if type(data) is tuple:
+        x,y = data
+    else:
+        x = data
+        y = None
+    x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
+
+    if 'use_coordinates' in params and params['use_coordinates']:
+        g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
+        xg = np.concatenate([x, g], axis=-1)
+        xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
+        x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
+
+    # global conditioning
+    if args.global_conditional:
+        global_lv = []
+        if 'z' in params:
+            global_lv.append(params['z'])
+        global_lv = np.concatenate(global_lv, axis=-1)
+
+    # spatial conditioning
+    if args.spatial_conditional:
+        spatial_lv = []
+        if 'use_coordinates' in params and params['use_coordinates']:
+            spatial_lv.append(g)
+        spatial_lv = np.concatenate(spatial_lv, axis=-1)
+
+    if args.global_conditional:
+        global_lv = np.split(global_lv, args.nr_gpu)
+        feed_dict.update({ghs[i]: global_lv[i] for i in range(args.nr_gpu)})
+    if args.spatial_conditional:
+        spatial_lv = np.split(spatial_lv, args.nr_gpu)
+        feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
+
+
+    x_gen = [np.zeros_like(x[0]) for i in range(args.nr_gpu)]
+
+    for yi in range(obs_shape[0]):
+        for xi in range(obs_shape[1]):
+            feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
+            new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
+            for i in range(args.nr_gpu):
+                x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
+    return np.concatenate(x_gen, axis=0)
+
+
+    return feed_dict
+
 
 
 def sample_from_model(sess, data=None, zs=None):
@@ -290,38 +339,6 @@ def make_feed_dict(data, init=False, **params):
             feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
     return feed_dict
 
-# def make_feed_dict(data, init=False, zs=None):
-#     if type(data) is tuple:
-#         x,y = data
-#     else:
-#         x = data
-#         y = None
-#
-#     y = zs
-#
-#     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
-#     g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
-#     xg = np.concatenate([x, g], axis=-1)
-#     xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
-#     x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
-#
-#     if init:
-#         feed_dict = {x_init: x}
-#         if args.global_conditional:
-#             feed_dict.update({gh_init: np.random.normal(size=(args.batch_size, args.global_latent_dim))})
-#         if args.spatial_conditional:
-#             feed_dict.update({sh_init: g})
-#     else:
-#         x = np.split(x, args.nr_gpu)
-#         g = np.split(g, args.nr_gpu)
-#         if y is not None:
-#             y = np.split(y, args.nr_gpu)
-#         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
-#         if args.spatial_conditional:
-#             feed_dict.update({shs[i]: g[i] for i in range(args.nr_gpu)})
-#         if args.global_conditional:
-#             feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
-#     return feed_dict
 
 # //////////// perform training //////////////
 if not os.path.exists(args.save_dir):
@@ -393,7 +410,7 @@ with tf.Session(config=config) as sess:
             zs = sess.run(vl.zs, feed_dict=feed_dict)
             sample_x = []
             for i in range(args.num_samples):
-                sample_x.append(sample_from_model(sess, data=d, zs=np.concatenate(zs, axis=0))) ##
+                sample_x.append(sample_from_model(sess, data=d, use_coordinates=True, z=np.concatenate(zs, axis=0))) ##
             sample_x = np.concatenate(sample_x,axis=0)
             img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
             img = plotting.plot_img(img_tile, title=args.data_set + ' samples')

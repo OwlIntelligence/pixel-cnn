@@ -209,7 +209,7 @@ train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_rat
 test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
 sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.875)
 
-def sample_from_model(sess, data=None, zs):
+def sample_from_model(sess, data=None, zs=None):
     if data is not None and type(data) is not tuple:
         x = data
     y = zs
@@ -336,9 +336,12 @@ with tf.Session(config=config) as sess:
         if epoch % args.save_interval == 0:
 
             # generate samples from the model
+            d = next(test_data)
+            feed_dict = vl.make_feed_dict(d)
+            zs = sess.run(vl.zs, feed_dict=feed_dict)
             sample_x = []
             for i in range(args.num_samples):
-                sample_x.append(sample_from_model(sess, data=next(test_data))) ##
+                sample_x.append(sample_from_model(sess, data=d, zs=np.concatenate(zs, axis=0))) ##
             sample_x = np.concatenate(sample_x,axis=0)
             img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
             img = plotting.plot_img(img_tile, title=args.data_set + ' samples')

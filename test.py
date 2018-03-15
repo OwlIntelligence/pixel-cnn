@@ -17,7 +17,7 @@ with tf.Session(config=config) as sess:
 
     v.load_vae(sess, v.saver)
 
-    test_mgen = m.CenterMaskGenerator(128, 128, 0.5)
+    test_mgen = m.CenterMaskGenerator(128, 128, 0.75)
 
     data = next(test_data)
     feed_dict = v.make_feed_dict(data, test_mgen)

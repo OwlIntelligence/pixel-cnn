@@ -284,10 +284,10 @@ def make_feed_dict(data, init=False, **params):
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
         if args.global_conditional:
             global_lv = np.split(global_lv, args.nr_gpu)
-            feed_dict.update({shs[i]: g[i] for i in range(args.nr_gpu)})
+            feed_dict.update({shs[i]: global_lv[i] for i in range(args.nr_gpu)})
         if args.spatial_conditional:
             spatial_lv = np.split(spatial_lv, args.nr_gpu)
-            feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
+            feed_dict.update({ghs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
     return feed_dict
 
 # def make_feed_dict(data, init=False, zs=None):

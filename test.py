@@ -17,7 +17,7 @@ with tf.Session(config=config) as sess:
 
     v.load_vae(sess, v.saver)
 
-    test_mgen = m.CenterMaskGenerator(128, 128, 1.)
+    test_mgen = m.CenterMaskGenerator(128, 128, 120. / 128.)
 
     data = next(test_data)
     data = uf.mask_inputs(data, test_mgen)[:,:,:,:3]

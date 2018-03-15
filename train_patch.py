@@ -299,6 +299,7 @@ with tf.Session(config=config) as sess:
 
     vl.load_vae(sess, vl.saver)
     data = next(test_data, 25)
+    print(data.shape)
     feed_dict = vl.make_feed_dict(data)
     sample_x = sess.run(vl.x_hats, feed_dict=feed_dict)
     sample_x = np.concatenate(sample_x, axis=0)

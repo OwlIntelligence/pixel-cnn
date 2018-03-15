@@ -23,6 +23,8 @@ import utils.mask as um
 import utils.mfunc as uf
 import utils.grid as grid
 
+import vae_loading as v
+
 # self define modules
 from configs import config_args, configs
 
@@ -207,30 +209,6 @@ train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_rat
 test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
 sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.875)
 
-# sample from the model
-# def sample_from_model(sess, data=None):
-#     if data is not None and type(data) is not tuple:
-#         x = data
-#     x = np.cast[np.float32]((x - 127.5) / 127.5)
-#     x = np.split(x, args.nr_gpu)
-#     h = [x[i].copy() for i in range(args.nr_gpu)]
-#     for i in range(args.nr_gpu):
-#         h[i] = uf.mask_inputs(h[i], test_mgen)
-#     feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
-#     #x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
-#     x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
-#     m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
-#     #assert m_gen[0]==m_gen[-1], "we currently assume all masks are the same during sampling"
-#     m_gen = m_gen[0][0]
-#     for yi in range(obs_shape[0]):
-#         for xi in range(obs_shape[1]):
-#             if m_gen[yi,xi] == 0:
-#                 feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
-#                 new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
-#                 for i in range(args.nr_gpu):
-#                     x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
-#     return np.concatenate(x_gen, axis=0)
-
 def sample_from_model(sess, data=None):
     if data is not None and type(data) is not tuple:
         x = data
@@ -271,33 +249,8 @@ def sample_from_model(sess, data=None):
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
-# turn numpy inputs into feed_dict for use with tensorflow
-# def make_feed_dict(data, init=False):
-#     if type(data) is tuple:
-#         x,y = data
-#     else:
-#         x = data
-#         y = None
-#     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
-#     if init:
-#         feed_dict = {x_init: x}
-#         if gh_init is not None:
-#             pass #feed_dict.update({gh_init: x})
-#         if sh_init is not None:
-#             h = x.copy()
-#             h = uf.mask_inputs(h, train_mgen)
-#             feed_dict.update({sh_init: h})
-#     else:
-#         x = np.split(x, args.nr_gpu)
-#         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
-#         if args.spatial_conditional:
-#             h = [x[i].copy() for i in range(args.nr_gpu)]
-#             for i in range(args.nr_gpu):
-#                 h[i] = uf.mask_inputs(h[i], train_mgen)
-#             feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
-#     return feed_dict
 
-def make_feed_dict(data, init=False):
+def make_feed_dict(data, init=False, shs=None):
     if type(data) is tuple:
         x,y = data
     else:
@@ -312,6 +265,11 @@ def make_feed_dict(data, init=False):
 
     if init:
         feed_dict = {x_init: x}
+        if args.global_conditional:
+            feed_dict.update({gh_init: })
+        if args.spatial_conditional:
+            feed_dict.update({sh_init: g})
+
         if gh_init is not None:
             feed_dict.update({gh_init: y})
         if sh_init is not None:
@@ -344,6 +302,16 @@ lr = args.learning_rate
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
+
+    v.load_vae(sess, v.saver)
+    data = next(test_data)
+    feed_dict = v.make_feed_dict(data)
+    sample_x = sess.run(v.x_hats, feed_dict=feed_dict)
+    sample_x = np.concatenate(sample_x, axis=0)
+    print(sample_x)
+    quit()
+
+
     for epoch in range(args.max_epochs):
         begin = time.time()
 

@@ -209,9 +209,10 @@ train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_rat
 test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
 sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.875)
 
-def sample_from_model(sess, data=None):
+def sample_from_model(sess, data=None, zs):
     if data is not None and type(data) is not tuple:
         x = data
+    y = zs
     x = np.cast[np.float32]((x - 127.5) / 127.5)
     g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
     xg = np.concatenate([x, g], axis=-1)
@@ -219,29 +220,19 @@ def sample_from_model(sess, data=None):
     x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
     x = np.split(x, args.nr_gpu)
     g = np.split(g, args.nr_gpu)
-    # y = np.split(y, args.nr_gpu)
+    y = np.split(y, args.nr_gpu)
 
-    h = [x[i].copy() for i in range(args.nr_gpu)]
-    for i in range(args.nr_gpu):
-        h[i] = uf.mask_inputs(h[i], sample_mgen)
-        h[i] = np.concatenate([g[i], h[i]], axis=-1)
     if args.spatial_conditional:
-        feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
+        feed_dict = {shs[i]: g[i] for i in range(args.nr_gpu)}
     if args.global_conditional:
         feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
 
-    if args.context_conditioning:
-        x_gen = [h[i][:,:,:,-4:-1].copy() for i in range(args.nr_gpu)]
-        m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
-        m_gen = m_gen[0][0]
-
     for yi in range(obs_shape[0]):
         for xi in range(obs_shape[1]):
-            if m_gen[yi,xi] == 0:
-                feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
-                new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
-                for i in range(args.nr_gpu):
-                    x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
+            feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
+            new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
+            for i in range(args.nr_gpu):
+                x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
     return np.concatenate(x_gen, axis=0)
 
 
@@ -332,7 +323,7 @@ with tf.Session(config=config) as sess:
         for d in test_data:
             feed_dict = vl.make_feed_dict(d)
             zs = sess.run(vl.zs, feed_dict=feed_dict)
-            feed_dict = make_feed_dict(d, zs=zs)
+            feed_dict = make_feed_dict(d, zs=np.concatenate(zs, axis=0))
             l = sess.run(bits_per_dim_test, feed_dict)
             test_losses.append(l)
         test_loss_gen = np.mean(test_losses)

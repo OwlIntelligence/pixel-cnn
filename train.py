@@ -297,6 +297,53 @@ saver = tf.train.Saver()
 #             feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
 #     return feed_dict
 
+def make_feed_dict(data, init=False, **params):
+    if type(data) is tuple:
+        x,y = data
+    else:
+        x = data
+        y = None
+    x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
+
+    if use_coordinates is not None and use_coordinates:
+        g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
+        xg = np.concatenate([x, g], axis=-1)
+        xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
+        x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
+
+    # global conditioning
+    if args.global_conditional:
+        global_lv = []
+        if z is not None:
+            global_lv.append(z)
+        global_lv = np.concatenate(global_lv, axis=-1)
+
+    # spatial conditioning
+    if spatial_conditional:
+        spatial_lv = []
+        if use_coordinates is not None and use_coordinates:
+            spatial_lv.append(g)
+        spatial_lv = np.concatenate(spatial_lv, axis=-1)
+
+    if init:
+        feed_dict = {x_init: x}
+        if args.global_conditional:
+            feed_dict.update({gh_init: global_lv})
+        if args.spatial_conditional:
+            feed_dict.update({sh_init: spatial_lv})
+    else:
+        x = np.split(x, args.nr_gpu)
+        feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
+        if args.global_conditional:
+            global_lv = np.split(global_lv, args.nr_gpu)
+            feed_dict.update({shs[i]: g[i] for i in range(args.nr_gpu)})
+        if args.spatial_conditional:
+            spatial_lv = np.split(spatial_lv, args.nr_gpu)
+            feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
+    return feed_dict
+
+
+
 def make_feed_dict(data, init=False):
     if type(data) is tuple:
         x,y = data

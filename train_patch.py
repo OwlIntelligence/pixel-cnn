@@ -209,6 +209,8 @@ train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_rat
 test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
 sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.875)
 
+
+
 def sample_from_model(sess, data=None, zs=None):
     if data is not None and type(data) is not tuple:
         x = data
@@ -243,38 +245,83 @@ initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
 
-def make_feed_dict(data, init=False, zs=None):
+def make_feed_dict(data, init=False, **params):
     if type(data) is tuple:
         x,y = data
     else:
         x = data
         y = None
+    x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
-    y = zs
+    if use_coordinates is not None and use_coordinates:
+        g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
+        xg = np.concatenate([x, g], axis=-1)
+        xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
+        x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
 
-    x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
-    g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
-    xg = np.concatenate([x, g], axis=-1)
-    xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
-    x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
+    # global conditioning
+    if args.global_conditional:
+        global_lv = []
+        if z is not None:
+            global_lv.append(z)
+        global_lv = np.concatenate(global_lv, axis=-1)
+
+    # spatial conditioning
+    if spatial_conditional:
+        spatial_lv = []
+        if use_coordinates is not None and use_coordinates:
+            spatial_lv.append(g)
+        spatial_lv = np.concatenate(spatial_lv, axis=-1)
 
     if init:
         feed_dict = {x_init: x}
         if args.global_conditional:
-            feed_dict.update({gh_init: np.random.normal(size=(args.batch_size, args.global_latent_dim))})
+            feed_dict.update({gh_init: global_lv})
         if args.spatial_conditional:
-            feed_dict.update({sh_init: g})
+            feed_dict.update({sh_init: spatial_lv})
     else:
         x = np.split(x, args.nr_gpu)
-        g = np.split(g, args.nr_gpu)
-        if y is not None:
-            y = np.split(y, args.nr_gpu)
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
-        if args.spatial_conditional:
-            feed_dict.update({shs[i]: g[i] for i in range(args.nr_gpu)})
         if args.global_conditional:
+            global_lv = np.split(global_lv, args.nr_gpu)
+            feed_dict.update({shs[i]: g[i] for i in range(args.nr_gpu)})
+        if args.spatial_conditional:
+            spatial_lv = np.split(spatial_lv, args.nr_gpu)
             feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
     return feed_dict
+
+# def make_feed_dict(data, init=False, zs=None):
+#     if type(data) is tuple:
+#         x,y = data
+#     else:
+#         x = data
+#         y = None
+#
+#     y = zs
+#
+#     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
+#     g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
+#     xg = np.concatenate([x, g], axis=-1)
+#     xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
+#     x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
+#
+#     if init:
+#         feed_dict = {x_init: x}
+#         if args.global_conditional:
+#             feed_dict.update({gh_init: np.random.normal(size=(args.batch_size, args.global_latent_dim))})
+#         if args.spatial_conditional:
+#             feed_dict.update({sh_init: g})
+#     else:
+#         x = np.split(x, args.nr_gpu)
+#         g = np.split(g, args.nr_gpu)
+#         if y is not None:
+#             y = np.split(y, args.nr_gpu)
+#         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
+#         if args.spatial_conditional:
+#             feed_dict.update({shs[i]: g[i] for i in range(args.nr_gpu)})
+#         if args.global_conditional:
+#             feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
+#     return feed_dict
 
 # //////////// perform training //////////////
 if not os.path.exists(args.save_dir):
@@ -312,7 +359,7 @@ with tf.Session(config=config) as sess:
         for d in train_data:
             feed_dict = vl.make_feed_dict(d)
             zs = sess.run(vl.zs, feed_dict=feed_dict)
-            feed_dict = make_feed_dict(d, zs=np.concatenate(zs, axis=0))
+            feed_dict = make_feed_dict(d, use_coordinates=True, z=np.concatenate(zs, axis=0))
             # forward/backward/update model on each gpu
             lr *= args.lr_decay
             feed_dict.update({ tf_lr: lr })
@@ -325,7 +372,7 @@ with tf.Session(config=config) as sess:
         for d in test_data:
             feed_dict = vl.make_feed_dict(d)
             zs = sess.run(vl.zs, feed_dict=feed_dict)
-            feed_dict = make_feed_dict(d, zs=np.concatenate(zs, axis=0))
+            feed_dict = make_feed_dict(d, use_coordinates=True, z=np.concatenate(zs, axis=0))
             l = sess.run(bits_per_dim_test, feed_dict)
             test_losses.append(l)
         test_loss_gen = np.mean(test_losses)

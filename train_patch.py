@@ -245,6 +245,7 @@ def sample_from_model(sess, data=None, **params):
         feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
 
 
+    x = np.split(x, args.nr_gpu)
     x_gen = [np.zeros_like(x[0]) for i in range(args.nr_gpu)]
 
     for yi in range(obs_shape[0]):

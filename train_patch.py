@@ -255,9 +255,19 @@ def sample_from_model(sess, data=None, **params):
         global_lv = np.split(global_lv, args.nr_gpu)
         feed_dict.update({ghs[i]: global_lv[i] for i in range(args.nr_gpu)})
     if args.spatial_conditional:
-        spatial_lv = np.split(spatial_lv, args.nr_gpu)
-        feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
+        #spatial_lv = np.split(spatial_lv, args.nr_gpu)
+        #feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
 
+        slv_2 = grid.zoom_batch(spatial_lv, [obs_shape[0]//2, obs_shape[1]//2])
+        slv_4 = grid.zoom_batch(spatial_lv, [obs_shape[0]//4, obs_shape[1]//4])
+
+        spatial_lv = np.split(spatial_lv, args.nr_gpu)
+        slv_2 = np.split(slv_2, args.nr_gpu)
+        slv_4 = np.split(slv_4, args.nr_gpu)
+
+        feed_dict.update({sh_1[i]: spatial_lv[i] for i in range(args.nr_gpu)})
+        feed_dict.update({sh_2[i]: slv_2[i] for i in range(args.nr_gpu)})
+        feed_dict.update({sh_4[i]: slv_4[i] for i in range(args.nr_gpu)})
 
     x = np.split(x, args.nr_gpu)
     x_gen = [np.zeros_like(x[0]) for i in range(args.nr_gpu)]
@@ -312,6 +322,9 @@ def make_feed_dict(data, init=False, **params):
         if args.global_conditional:
             feed_dict.update({gh_init: global_lv})
         if args.spatial_conditional:
+            print(spatial_lv.shape, slv_2.shape, slv_4.shape)
+            print(spatial_lv)
+            print(slv_2)
             slv_2 = grid.zoom_batch(spatial_lv, [obs_shape[0]//2, obs_shape[1]//2])
             slv_4 = grid.zoom_batch(spatial_lv, [obs_shape[0]//4, obs_shape[1]//4])
             # feed_dict.update({sh_init: spatial_lv})

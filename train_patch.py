@@ -316,8 +316,8 @@ def make_feed_dict(data, init=False, **params):
             slv_4 = grid.zoom_batch(spatial_lv, [obs_shape[0]//4, obs_shape[1]//4])
             # feed_dict.update({sh_init: spatial_lv})
             feed_dict.update({sh_1_init: spatial_lv})
-            feed_dict.update({sh_2_init: slv2})
-            feed_dict.update({sh_4_init: slv4})
+            feed_dict.update({sh_2_init: slv_2})
+            feed_dict.update({sh_4_init: slv_4})
     else:
         x = np.split(x, args.nr_gpu)
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}

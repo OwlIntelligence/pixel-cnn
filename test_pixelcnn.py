@@ -391,7 +391,7 @@ with tf.Session(config=config) as sess:
     saver.restore(sess, ckpt_file)
 
     d = next(test_data)
-    sample_mgen = um.CenterMaskGenerator(128, 128, 0.25)
+    sample_mgen = um.CenterMaskGenerator(128, 128, 8./128)
     mask = sample_mgen.gen(1)[0]
 
     feed_dict = vl.make_feed_dict(d)
@@ -400,7 +400,7 @@ with tf.Session(config=config) as sess:
     for i in range(args.num_samples):
         sample_x.append(complete(sess, data=d, mask=mask, use_coordinates=True, z=np.concatenate(zs, axis=0))) ##
     sample_x = np.concatenate(sample_x,axis=0)
-    img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
-    img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
-    plotting.plt.savefig(os.path.join("plots",'%s_sample.png' % (args.data_set)))
-    plotting.plt.close('all')
+
+    from PIL import Image
+    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(8,8)), 'RGB')
+    img.save(os.path.join("plots", '%s_complete_%s.png' % (args.data_set, "test")))

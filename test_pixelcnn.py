@@ -207,7 +207,7 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
 #train_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
 test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
-sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.875)
+sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.25)
 
 def sample_from_model(sess, data=None, **params):
     if type(data) is tuple:
@@ -246,11 +246,10 @@ def sample_from_model(sess, data=None, **params):
 
 
     x = np.split(x, args.nr_gpu)
-    # x_gen = [np.zeros_like(x[0]) for i in range(args.nr_gpu)]
-    x_gen = x
+    x_gen = [np.zeros_like(x[0]) for i in range(args.nr_gpu)]
 
-    for yi in range(8, obs_shape[0]-8):
-        for xi in range(8, obs_shape[1]-8):
+    for yi in range(0, obs_shape[0]):
+        for xi in range(0, obs_shape[1]):
             feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
             new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
             for i in range(args.nr_gpu):
@@ -258,7 +257,68 @@ def sample_from_model(sess, data=None, **params):
     return np.concatenate(x_gen, axis=0)
 
 
+def complete(sess, data, mask, **params):
+    if type(data) is tuple:
+        x,y = data
+    else:
+        x = data
+        y = None
+    x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
+    # mask images
+    masks = uf.broadcast_mask(mask, 3, x.shape[0])
+    x *= masks
 
+    x_ret = np.split(x, args.nr_gpu)
+
+    # global conditioning
+    if args.global_conditional:
+        global_lv = []
+        if 'z' in params:
+            global_lv.append(params['z'])
+        global_lv = np.concatenate(global_lv, axis=-1)
+
+    global_g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
+
+    if args.global_conditional:
+        global_lv = np.split(global_lv, args.nr_gpu)
+        feed_dict.update({ghs[i]: global_lv[i] for i in range(args.nr_gpu)})
+
+    while True:
+        # find the next pixel and the corresonding window
+        p = uf.find_next_missing_pixel(mask)
+        if p is None:
+            break
+        else:
+            print(p)
+        window = uf.find_maximally_conditioned_window(mask, 32, p)
+        [[h0, h1], [w0, w1]] = window
+        g = global_g[:, h0:h1, w0:w1, :]
+        mw = mask[h0:h1, w0:w1]
+        xw = x[:, h0:h1, w0:w1, :]
+        yi, xi = p[0]-h0, p[1]-w0
+
+        # spatial conditioning
+        if args.spatial_conditional:
+            spatial_lv = []
+            if 'use_coordinates' in params and params['use_coordinates']:
+                spatial_lv.append(g)
+            spatial_lv = np.concatenate(spatial_lv, axis=-1)
+
+        if args.spatial_conditional:
+            spatial_lv = np.split(spatial_lv, args.nr_gpu)
+            feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
+
+
+        x_gen = np.split(xw, args.nr_gpu)
+
+        feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
+        new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
+        for i in range(args.nr_gpu):
+            x_ret[i][:,p[0],p[1],:] = new_x_gen_np[i][:,yi,xi,:]
+
+        mask[p[0], p[1]] = 1
+
+    return np.concatenate(x_ret, axis=0)
 
 
 # init & save
@@ -331,19 +391,13 @@ with tf.Session(config=config) as sess:
     saver.restore(sess, ckpt_file)
 
     d = next(test_data)
-    for i in range(d.shape[0]):
-        d[i] = d[0].copy()
-    ori_d, _ = uf.random_crop_images(d, output_size=(args.input_size, args.input_size))
-
-    img_tile = plotting.img_tile(ori_d[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
-    img = plotting.plot_img(img_tile, title=args.data_set + ' samples')
-    plotting.plt.savefig(os.path.join("plots",'%s_original.png' % (args.data_set)))
+    mask = sample_mgen.gen(1)[0]
 
     feed_dict = vl.make_feed_dict(d)
     zs = sess.run(vl.zs, feed_dict=feed_dict)
     sample_x = []
     for i in range(args.num_samples):
-        sample_x.append(sample_from_model(sess, data=d, use_coordinates=True, z=np.concatenate(zs, axis=0))) ##
+        sample_x.append(complete(sess, data=d, mask, use_coordinates=True, z=np.concatenate(zs, axis=0))) ##
     sample_x = np.concatenate(sample_x,axis=0)
     img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
     img = plotting.plot_img(img_tile, title=args.data_set + ' samples')

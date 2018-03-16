@@ -71,11 +71,28 @@ def tile_crop_images(input, output_size):
     return x, y
 
 
-def find_next_missing_pixel(masks):
-    pass
+def find_next_missing_pixel(mask):
+    height, width = mask.shape
+    for h in range(height):
+        for w in range(width):
+            if mask[h, w] == 0:
+                return (h, w)
 
-def find_maximally_conditioned_window(mask, cur_coordinate):
-    pass
+def find_maximally_conditioned_window(mask, window_size, pixel):
+    height, width = mask.shape
+    h, w = pixel
+    h0, w0 = h-window_size+1, w-window_size//2
+    h0, w0 = min(max(h0, 0), height-window_size), min(max(w0, 0), width-window_size)
+    return [[h0, h0+window_size], [w0, w0+window_size]]
+
+def broadcast_mask(mask, num_channel=None, batch_size=None):
+    if num_channel is not None:
+        mask = np.stack([mask.copy() for i in range(num_channel)], axis=-1)
+    if batch_size is not None:
+        mask = np.stack([mask.copy() for i in range(batch_size)], axis=0)
+    return mask
+
+
 
 
 ## https://github.com/aizvorski/video-quality/blob/master/psnr.py

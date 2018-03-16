@@ -24,7 +24,7 @@ tf.flags.DEFINE_boolean("debug", default_value=False, docstring="is debugging?")
 
 FLAGS = tf.flags.FLAGS
 
-FLAGS.batch_size = 8
+FLAGS.batch_size = 4
 FLAGS.nr_gpu = 4
 FLAGS.save_dir = "/data/ziz/jxu/models/vae-128-masked"
 

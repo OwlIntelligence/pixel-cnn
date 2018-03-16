@@ -391,7 +391,7 @@ with tf.Session(config=config) as sess:
     saver.restore(sess, ckpt_file)
 
     d = next(test_data)
-    sample_mgen = um.CenterMaskGenerator(128, 128, 8./128)
+    sample_mgen = um.CenterMaskGenerator(128, 128, 48./128)
     mask = sample_mgen.gen(1)[0]
 
     feed_dict = vl.make_feed_dict(d)

@@ -207,97 +207,9 @@ train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_rat
 test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
 sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.875)
 
-# sample from the model
-# def sample_from_model(sess, data=None):
-#     if data is not None and type(data) is not tuple:
-#         x = data
-#     x = np.cast[np.float32]((x - 127.5) / 127.5)
-#     x = np.split(x, args.nr_gpu)
-#     h = [x[i].copy() for i in range(args.nr_gpu)]
-#     for i in range(args.nr_gpu):
-#         h[i] = uf.mask_inputs(h[i], test_mgen)
-#     feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
-#     #x_gen = [np.zeros((args.batch_size,) + obs_shape, dtype=np.float32) for i in range(args.nr_gpu)]
-#     x_gen = [h[i][:,:,:,:3].copy() for i in range(args.nr_gpu)]
-#     m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
-#     #assert m_gen[0]==m_gen[-1], "we currently assume all masks are the same during sampling"
-#     m_gen = m_gen[0][0]
-#     for yi in range(obs_shape[0]):
-#         for xi in range(obs_shape[1]):
-#             if m_gen[yi,xi] == 0:
-#                 feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
-#                 new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
-#                 for i in range(args.nr_gpu):
-#                     x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
-#     return np.concatenate(x_gen, axis=0)
-
-def sample_from_model(sess, data=None):
-    if data is not None and type(data) is not tuple:
-        x = data
-    x = np.cast[np.float32]((x - 127.5) / 127.5)
-    g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
-    xg = np.concatenate([x, g], axis=-1)
-    xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
-    x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
-    x = np.split(x, args.nr_gpu)
-    g = np.split(g, args.nr_gpu)
-    # y = np.split(y, args.nr_gpu)
-
-    h = [x[i].copy() for i in range(args.nr_gpu)]
-    for i in range(args.nr_gpu):
-        h[i] = uf.mask_inputs(h[i], sample_mgen)
-        h[i] = np.concatenate([g[i], h[i]], axis=-1)
-    if args.spatial_conditional:
-        feed_dict = {shs[i]: h[i] for i in range(args.nr_gpu)}
-    if args.global_conditional:
-        feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
-
-    if args.context_conditioning:
-        x_gen = [h[i][:,:,:,-4:-1].copy() for i in range(args.nr_gpu)]
-        m_gen = [h[i][:,:,:,-1].copy() for i in range(args.nr_gpu)]
-        m_gen = m_gen[0][0]
-
-    for yi in range(obs_shape[0]):
-        for xi in range(obs_shape[1]):
-            if m_gen[yi,xi] == 0:
-                feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
-                new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
-                for i in range(args.nr_gpu):
-                    x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
-    return np.concatenate(x_gen, axis=0)
 
 
-# init & save
-initializer = tf.global_variables_initializer()
-saver = tf.train.Saver()
-
-# turn numpy inputs into feed_dict for use with tensorflow
-# def make_feed_dict(data, init=False):
-#     if type(data) is tuple:
-#         x,y = data
-#     else:
-#         x = data
-#         y = None
-#     x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
-#     if init:
-#         feed_dict = {x_init: x}
-#         if gh_init is not None:
-#             pass #feed_dict.update({gh_init: x})
-#         if sh_init is not None:
-#             h = x.copy()
-#             h = uf.mask_inputs(h, train_mgen)
-#             feed_dict.update({sh_init: h})
-#     else:
-#         x = np.split(x, args.nr_gpu)
-#         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
-#         if args.spatial_conditional:
-#             h = [x[i].copy() for i in range(args.nr_gpu)]
-#             for i in range(args.nr_gpu):
-#                 h[i] = uf.mask_inputs(h[i], train_mgen)
-#             feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
-#     return feed_dict
-
-def make_feed_dict(data, init=False, **params):
+def sample_from_model(sess, data=None, **params):
     if type(data) is tuple:
         x,y = data
     else:
@@ -305,7 +217,7 @@ def make_feed_dict(data, init=False, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
-    if use_coordinates is not None and use_coordinates:
+    if 'use_coordinates' in params and params['use_coordinates']:
         g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
         xg = np.concatenate([x, g], axis=-1)
         xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
@@ -314,14 +226,66 @@ def make_feed_dict(data, init=False, **params):
     # global conditioning
     if args.global_conditional:
         global_lv = []
-        if z is not None:
-            global_lv.append(z)
+        if 'z' in params:
+            global_lv.append(params['z'])
         global_lv = np.concatenate(global_lv, axis=-1)
 
     # spatial conditioning
-    if spatial_conditional:
+    if args.spatial_conditional:
         spatial_lv = []
-        if use_coordinates is not None and use_coordinates:
+        if 'use_coordinates' in params and params['use_coordinates']:
+            spatial_lv.append(g)
+        spatial_lv = np.concatenate(spatial_lv, axis=-1)
+
+    if args.global_conditional:
+        global_lv = np.split(global_lv, args.nr_gpu)
+        feed_dict.update({ghs[i]: global_lv[i] for i in range(args.nr_gpu)})
+    if args.spatial_conditional:
+        spatial_lv = np.split(spatial_lv, args.nr_gpu)
+        feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
+
+    x = np.split(x, args.nr_gpu)
+    x_gen = [np.zeros_like(x[0]) for i in range(args.nr_gpu)]
+
+    for yi in range(obs_shape[0]):
+        for xi in range(obs_shape[1]):
+            feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
+            new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
+            for i in range(args.nr_gpu):
+                x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
+    return np.concatenate(x_gen, axis=0)
+
+
+# init & save
+initializer = tf.global_variables_initializer()
+saver = tf.train.Saver()
+
+# turn numpy inputs into feed_dict for use with tensorflow
+def make_feed_dict(data, init=False, **params):
+    if type(data) is tuple:
+        x,y = data
+    else:
+        x = data
+        y = None
+    x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
+
+    if 'use_coordinates' in params and params['use_coordinates']:
+        g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
+        xg = np.concatenate([x, g], axis=-1)
+        xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
+        x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
+
+    # global conditioning
+    if args.global_conditional:
+        global_lv = []
+        if 'z' in params:
+            global_lv.append(params['z'])
+        global_lv = np.concatenate(global_lv, axis=-1)
+
+    # spatial conditioning
+    if args.spatial_conditional:
+        spatial_lv = []
+        if 'use_coordinates' in params and params['use_coordinates']:
             spatial_lv.append(g)
         spatial_lv = np.concatenate(spatial_lv, axis=-1)
 
@@ -336,50 +300,10 @@ def make_feed_dict(data, init=False, **params):
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
         if args.global_conditional:
             global_lv = np.split(global_lv, args.nr_gpu)
-            feed_dict.update({shs[i]: g[i] for i in range(args.nr_gpu)})
+            feed_dict.update({ghs[i]: global_lv[i] for i in range(args.nr_gpu)})
         if args.spatial_conditional:
             spatial_lv = np.split(spatial_lv, args.nr_gpu)
-            feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
-    return feed_dict
-
-
-
-def make_feed_dict(data, init=False):
-    if type(data) is tuple:
-        x,y = data
-    else:
-        x = data
-        y = None
-
-    x = np.cast[np.float32]((x - 127.5) / 127.5) # input to pixelCNN is scaled from uint8 [0,255] to float in range [-1,1]
-    g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
-    xg = np.concatenate([x, g], axis=-1)
-    xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
-    x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
-
-    if init:
-        feed_dict = {x_init: x}
-        if gh_init is not None:
-            feed_dict.update({gh_init: y})
-        if sh_init is not None:
-            h = x.copy()
-            h = uf.mask_inputs(h, train_mgen)
-            h = np.concatenate([g, h], axis=-1)
-            feed_dict.update({sh_init: h})
-    else:
-        x = np.split(x, args.nr_gpu)
-        g = np.split(g, args.nr_gpu)
-        if y is not None:
-            y = np.split(y, args.nr_gpu)
-        feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
-        if args.spatial_conditional:
-            h = [x[i].copy() for i in range(args.nr_gpu)]
-            for i in range(args.nr_gpu):
-                h[i] = uf.mask_inputs(h[i], train_mgen)
-                h[i] = np.concatenate([g[i], h[i]], axis=-1)
-            feed_dict.update({shs[i]: h[i] for i in range(args.nr_gpu)})
-        if args.global_conditional:
-            feed_dict.update({ghs[i]: y[i] for i in range(args.nr_gpu)})
+            feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
     return feed_dict
 
 # //////////// perform training //////////////

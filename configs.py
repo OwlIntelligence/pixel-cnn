@@ -111,3 +111,23 @@ configs['celeba128-patch'] = {
     "global_latent_dim": 100,
     "spatial_latent_num_channel": 2,
 }
+
+
+configs['celeba128-full'] = {
+    "data_dir": "/data/ziz/not-backed-up/jxu/CelebA",
+    "save_dir": "/data/ziz/jxu/models/celeba128-full",
+    "nr_filters": 100,
+    "nr_resnet": 4,
+    "data_set": "celeba128",
+    "batch_size": 16,
+    "init_batch_size": 16,
+    "spatial_conditional": False,
+    'global_conditional': True,
+    "save_interval": 5,
+    "map_sampling": False,
+    "nr_gpu": 4,
+    #'context_conditioning': True,
+    "input_size": 128,
+    "global_latent_dim": 100,
+    #"spatial_latent_num_channel": 2,
+}

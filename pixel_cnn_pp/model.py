@@ -31,7 +31,7 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
 
         if spatial_conditional:
             if type(sh)==list:
-                sh, sh_2, sh_3 = sh
+                sh, sh_2, sh_4 = sh
             else:
                 sh = nn.latent_deconv_net(sh, scale_factor=1)
                 sh_2 = nn.conv2d(sh, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')

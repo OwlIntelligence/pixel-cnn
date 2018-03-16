@@ -266,8 +266,6 @@ def complete(sess, data, mask, **params):
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
     # mask images
     masks = uf.broadcast_mask(mask, 3, x.shape[0])
-    print(masks.shape)
-    print(x.shape)
     x *= masks
 
     x_ret = np.split(x, args.nr_gpu)
@@ -393,6 +391,7 @@ with tf.Session(config=config) as sess:
     saver.restore(sess, ckpt_file)
 
     d = next(test_data)
+    sample_mgen = um.CenterMaskGenerator(128, 128, 0.25)
     mask = sample_mgen.gen(1)[0]
 
     feed_dict = vl.make_feed_dict(d)

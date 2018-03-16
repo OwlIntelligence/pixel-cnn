@@ -246,10 +246,9 @@ def sample_from_model(sess, data=None, **params):
 
 
     x = np.split(x, args.nr_gpu)
-    #x_gen = [np.zeros_like(x[0]) for i in range(args.nr_gpu)]
-    x_gen = x #[np.zeros_like(x[0]) for i in range(args.nr_gpu)]
+    x_gen = [np.zeros_like(x[0]) for i in range(args.nr_gpu)]
 
-    for yi in range(16, obs_shape[0]):
+    for yi in range(obs_shape[0]):
         for xi in range(obs_shape[1]):
             feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
             new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)

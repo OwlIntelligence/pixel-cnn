@@ -312,9 +312,14 @@ if not os.path.exists(args.save_dir):
 test_bpd = []
 lr = args.learning_rate
 
+import vae_loading as vl
+
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
+
+    vl.load_vae(sess, vl.saver)
+
     for epoch in range(args.max_epochs):
         begin = time.time()
 
@@ -328,14 +333,18 @@ with tf.Session(config=config) as sess:
             else:
                 print('initializing the model...')
                 sess.run(initializer)
-                feed_dict = make_feed_dict(train_data.next(args.init_batch_size), init=True)  # manually retrieve exactly init_batch_size examples
+                d = train_data.next(args.init_batch_size)
+                zs = np.random.uniform(size=(d.shape[0], vl.FLAGS.z_dim))
+                feed_dict = make_feed_dict(d, init=True, z=zs)  # manually retrieve exactly init_batch_size examples
                 sess.run(init_pass, feed_dict)
             print('starting training')
 
         # train for one epoch
         train_losses = []
         for d in train_data:
-            feed_dict = make_feed_dict(d)
+            feed_dict = vl.make_feed_dict(d)
+            zs = sess.run(vl.zs, feed_dict=feed_dict)
+            feed_dict = make_feed_dict(d, z=np.concatenate(zs, axis=0))
             # forward/backward/update model on each gpu
             lr *= args.lr_decay
             feed_dict.update({ tf_lr: lr })
@@ -346,7 +355,9 @@ with tf.Session(config=config) as sess:
         # compute likelihood over test data
         test_losses = []
         for d in test_data:
-            feed_dict = make_feed_dict(d)
+            feed_dict = vl.make_feed_dict(d)
+            zs = sess.run(vl.zs, feed_dict=feed_dict)
+            feed_dict = make_feed_dict(d, z=np.concatenate(zs, axis=0))
             l = sess.run(bits_per_dim_test, feed_dict)
             test_losses.append(l)
         test_loss_gen = np.mean(test_losses)
@@ -359,9 +370,12 @@ with tf.Session(config=config) as sess:
         if epoch % args.save_interval == 0:
 
             # generate samples from the model
+            d = next(test_data)
+            feed_dict = vl.make_feed_dict(d)
+            zs = sess.run(vl.zs, feed_dict=feed_dict)
             sample_x = []
             for i in range(args.num_samples):
-                sample_x.append(sample_from_model(sess, data=next(test_data))) ##
+                sample_x.append(sample_from_model(sess, data=d, z=np.concatenate(zs, axis=0))) ##
             sample_x = np.concatenate(sample_x,axis=0)
             img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
             img = plotting.plot_img(img_tile, title=args.data_set + ' samples')

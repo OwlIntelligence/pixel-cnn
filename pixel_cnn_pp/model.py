@@ -30,9 +30,12 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
             raise('resnet nonlinearity ' + resnet_nonlinearity + ' is not supported')
 
         if spatial_conditional:
-            sh = nn.latent_deconv_net(sh, scale_factor=1)
-            sh_2 = nn.conv2d(sh, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
-            sh_4 = nn.conv2d(sh_2, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
+            if type(sh)==list:
+                sh = nn.latent_deconv_net(sh, scale_factor=1)
+                sh_2 = nn.conv2d(sh, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
+                sh_4 = nn.conv2d(sh_2, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
+            else:
+                sh, sh_2, sh_3 = sh
         else:
             sh_2, sh_4 = None, None
 

@@ -185,7 +185,7 @@ for i in range(args.nr_gpu):
                 epsilon = 0.5 - 1e-5
             else:
                 epsilon = 1e-5
-            epsilon = 1e-5 #0.05
+            epsilon = 0.05
             new_x_gen.append(nn.sample_from_discretized_mix_logistic(out, args.nr_logistic_mix, epsilon=epsilon))
 
 # add losses and gradients together and get training updates

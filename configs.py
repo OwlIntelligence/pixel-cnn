@@ -116,8 +116,8 @@ configs['celeba128-patch'] = {
 configs['celeba128-full'] = {
     "data_dir": "/data/ziz/not-backed-up/jxu/CelebA",
     "save_dir": "/data/ziz/jxu/models/celeba128-full",
-    "nr_filters": 50,
-    "nr_resnet": 4,
+    "nr_filters": 80,
+    "nr_resnet": 6,
     "data_set": "celeba128",
     "batch_size": 4,
     "init_batch_size": 4,

@@ -397,7 +397,7 @@ with tf.Session(config=config) as sess:
     zs = sess.run(vl.zs, feed_dict=feed_dict)
     sample_x = []
     for i in range(args.num_samples):
-        sample_x.append(complete(sess, data=d, mask, use_coordinates=True, z=np.concatenate(zs, axis=0))) ##
+        sample_x.append(complete(sess, data=d, mask=mask, use_coordinates=True, z=np.concatenate(zs, axis=0))) ##
     sample_x = np.concatenate(sample_x,axis=0)
     img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
     img = plotting.plot_img(img_tile, title=args.data_set + ' samples')

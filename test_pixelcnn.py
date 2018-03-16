@@ -185,7 +185,7 @@ for i in range(args.nr_gpu):
                 epsilon = 0.5 - 1e-5
             else:
                 epsilon = 1e-5
-            epsilon = 0.05
+            epsilon = 1e-5 #0.05
             new_x_gen.append(nn.sample_from_discretized_mix_logistic(out, args.nr_logistic_mix, epsilon=epsilon))
 
 # add losses and gradients together and get training updates
@@ -288,9 +288,8 @@ def complete(sess, data, mask, **params):
         p = uf.find_next_missing_pixel(mask)
         if p is None:
             break
-        else:
-            print(p)
         window = uf.find_maximally_conditioned_window(mask, 32, p)
+        print(p, window)
         [[h0, h1], [w0, w1]] = window
         g = global_g[:, h0:h1, w0:w1, :]
         mw = mask[h0:h1, w0:w1]
@@ -391,7 +390,7 @@ with tf.Session(config=config) as sess:
     saver.restore(sess, ckpt_file)
 
     d = next(test_data)
-    sample_mgen = um.RectangleMaskGenerator(128, 128, (96, 128, 128, 0))
+    sample_mgen = um.RectangleMaskGenerator(128, 128, (96, 96, 128, 32))
     mask = sample_mgen.gen(1)[0]
 
     feed_dict = vl.make_feed_dict(d)

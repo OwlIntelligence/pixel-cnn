@@ -401,6 +401,8 @@ with tf.Session(config=config) as sess:
         sample_x.append(complete(sess, data=d, mask=mask, use_coordinates=True, z=np.concatenate(zs, axis=0))) ##
     sample_x = np.concatenate(sample_x,axis=0)
 
+    sample_x = np.rint(sample_x * 127.5 + 127.5)
+
     from PIL import Image
     img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(8,8)), 'RGB')
     img.save(os.path.join("plots", '%s_complete_%s.png' % (args.data_set, "test")))

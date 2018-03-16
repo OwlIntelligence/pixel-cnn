@@ -43,9 +43,6 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
 
             ## Mini Conv
 
-
-
-
             # ////////// up pass through pixelCNN ////////
             xs = nn.int_shape(x)
             x_pad = tf.concat([x,tf.ones(xs[:-1]+[1])],3) # add channel of ones to distinguish image from padding later on
@@ -55,6 +52,8 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
             for rep in range(nr_resnet):
                 u_list.append(nn.gated_resnet(u_list[-1], conv=nn.down_shifted_conv2d))
                 ul_list.append(nn.gated_resnet(ul_list[-1], u_list[-1], conv=nn.down_right_shifted_conv2d))
+
+
 
             # u_list.append(nn.down_shifted_conv2d(u_list[-1], num_filters=nr_filters, stride=[2, 2]))
             # ul_list.append(nn.down_right_shifted_conv2d(ul_list[-1], num_filters=nr_filters, stride=[2, 2]))
@@ -72,9 +71,14 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
             for t in u_list+ul_list:
                 tf.add_to_collection('checkpoints', t)
 
+            #
+            x_out = nn.nin(tf.nn.elu(ul_list[-1]),10*nr_logistic_mix)
+            return x_out
+            #
+
             # /////// down pass ////////
-            u = u_list.pop()
-            ul = ul_list.pop()
+            # u = u_list.pop()
+            # ul = ul_list.pop()
             # for rep in range(nr_resnet):
             #     u = nn.gated_resnet(u, u_list.pop(), sh=sh_4, conv=nn.down_shifted_conv2d)
             #     ul = nn.gated_resnet(ul, tf.concat([u, ul_list.pop()],3), sh=sh_4, conv=nn.down_right_shifted_conv2d)
@@ -91,11 +95,11 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
             #
             # u = nn.down_shifted_deconv2d(u, num_filters=nr_filters, stride=[2, 2])
             # ul = nn.down_right_shifted_deconv2d(ul, num_filters=nr_filters, stride=[2, 2])
-            for rep in range(nr_resnet+1):
-                u = nn.gated_resnet(u, u_list.pop(), conv=nn.down_shifted_conv2d)
-                ul = nn.gated_resnet(ul, tf.concat([u, ul_list.pop()],3), conv=nn.down_right_shifted_conv2d)
-                tf.add_to_collection('checkpoints', u)
-                tf.add_to_collection('checkpoints', ul)
+            # for rep in range(nr_resnet+1):
+            #     u = nn.gated_resnet(u, u_list.pop(), conv=nn.down_shifted_conv2d)
+            #     ul = nn.gated_resnet(ul, tf.concat([u, ul_list.pop()],3), conv=nn.down_right_shifted_conv2d)
+            #     tf.add_to_collection('checkpoints', u)
+            #     tf.add_to_collection('checkpoints', ul)
 
             if energy_distance:
                 f = nn.nin(tf.nn.elu(ul), 64)

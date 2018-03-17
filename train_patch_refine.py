@@ -345,6 +345,8 @@ with tf.Session(config=config) as sess:
 
     vl.load_vae(sess, vl.saver)
 
+    vl_mgen = um.RandomRectangleMaskGenerator(128, 128, max_ratio=.75)
+
     for epoch in range(args.max_epochs):
         begin = time.time()
 
@@ -367,7 +369,7 @@ with tf.Session(config=config) as sess:
         # train for one epoch
         train_losses = []
         for d in train_data:
-            feed_dict = vl.make_feed_dict(d)
+            feed_dict = vl.make_feed_dict(d, vl_mgen)
             ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
             zs, x_hats = ret[:args.nr_gpu], ret[args.nr_gpu:]
             zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)
@@ -382,7 +384,7 @@ with tf.Session(config=config) as sess:
         # compute likelihood over test data
         test_losses = []
         for d in test_data:
-            feed_dict = vl.make_feed_dict(d)
+            feed_dict = vl.make_feed_dict(d, vl_mgen)
             ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
             zs, x_hats = ret[:args.nr_gpu], ret[args.nr_gpu:]
             zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)
@@ -400,7 +402,7 @@ with tf.Session(config=config) as sess:
 
             # generate samples from the model
             d = next(test_data)
-            feed_dict = vl.make_feed_dict(d)
+            feed_dict = vl.make_feed_dict(d, vl_mgen)
             ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
             zs, x_hats = ret[:args.nr_gpu], ret[args.nr_gpu:]
             zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)

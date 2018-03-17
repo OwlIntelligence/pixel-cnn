@@ -280,7 +280,8 @@ def make_feed_dict(data, init=False, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
-    print(x_hats.min(), x_hats.max())
+    params['x_hats'] = (params['x_hats'] * 2.) - 1.
+    print(params['x_hats'].min(), params['x_hats'].max())
 
 
     if 'use_coordinates' in params and params['use_coordinates']:

@@ -9,6 +9,7 @@ from utils import plotting
 from pixel_cnn_pp.nn import adam_updates
 import utils.mask as m
 import vae_loading as v
+import utils.mfunc as uf
 
 
 test_data = celeba_data.DataLoader(v.FLAGS.data_dir, 'valid', v.FLAGS.batch_size*v.FLAGS.nr_gpu, shuffle=False, size=128)

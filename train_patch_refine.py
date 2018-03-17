@@ -280,8 +280,6 @@ def make_feed_dict(data, init=False, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
-    print(params['x_hats'].shape)
-    print(params['x_hats'].min(), params['x_hats'].min())
 
 
     if 'use_coordinates' in params and params['use_coordinates']:
@@ -372,7 +370,8 @@ with tf.Session(config=config) as sess:
             feed_dict = vl.make_feed_dict(d)
             ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
             zs, x_hats = ret[:args.nr_gpu], ret[args.nr_gpu:]
-            feed_dict = make_feed_dict(d, use_coordinates=True, z=np.concatenate(zs, axis=0), x_hats=x_hats)
+            zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)
+            feed_dict = make_feed_dict(d, use_coordinates=True, z=zs, x_hats=x_hats)
             # forward/backward/update model on each gpu
             lr *= args.lr_decay
             feed_dict.update({ tf_lr: lr })
@@ -386,7 +385,8 @@ with tf.Session(config=config) as sess:
             feed_dict = vl.make_feed_dict(d)
             ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
             zs, x_hats = ret[:args.nr_gpu], ret[args.nr_gpu:]
-            feed_dict = make_feed_dict(d, use_coordinates=True, z=np.concatenate(zs, axis=0), x_hats=x_hats)
+            zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)
+            feed_dict = make_feed_dict(d, use_coordinates=True, z=zs, x_hats=x_hats)
             l = sess.run(bits_per_dim_test, feed_dict)
             test_losses.append(l)
         test_loss_gen = np.mean(test_losses)
@@ -403,9 +403,10 @@ with tf.Session(config=config) as sess:
             feed_dict = vl.make_feed_dict(d)
             ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
             zs, x_hats = ret[:args.nr_gpu], ret[args.nr_gpu:]
+            zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)
             sample_x = []
             for i in range(args.num_samples):
-                sample_x.append(sample_from_model(sess, data=d, use_coordinates=True, z=np.concatenate(zs, axis=0), x_hats=x_hats)) ##
+                sample_x.append(sample_from_model(sess, data=d, use_coordinates=True, z=zs, x_hats=x_hats)) ##
             sample_x = np.concatenate(sample_x,axis=0)
             img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
             img = plotting.plot_img(img_tile, title=args.data_set + ' samples')

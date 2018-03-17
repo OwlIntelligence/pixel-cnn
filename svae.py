@@ -30,7 +30,7 @@ kernel_initializer = None #tf.random_normal_initializer()
 
 def generative_network(z):
     with tf.variable_scope("generative_network"):
-        net = tf.reshape(z, [-1, 8, 8, FLAGS.z_dim/8/8])
+        net = tf.reshape(z, [-1, 8, 8, FLAGS.z_dim//(8*8)])
 
         net = tf.layers.conv2d_transpose(net, 1024, 5, strides=2, padding='SAME', kernel_initializer=kernel_initializer)
         net = tf.layers.batch_normalization(net)

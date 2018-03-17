@@ -221,6 +221,7 @@ def sample_from_model(sess, data=None, **params):
         g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
         if 'x_hats' in params:
             x_hats = params['x_hats']
+            x_hats = (x_hats * 2.) - 1.
             xgx = np.concatenate([x, g, x_hats], axis=-1)
             xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size, args.input_size))
             x, g, x_hats = xgx[:, :, :, :3], xgx[:, :, :, 3:5], xgx[:, :, :, 5:]
@@ -280,14 +281,11 @@ def make_feed_dict(data, init=False, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
-    params['x_hats'] = (params['x_hats'] * 2.) - 1.
-    print(params['x_hats'].min(), params['x_hats'].max())
-
-
     if 'use_coordinates' in params and params['use_coordinates']:
         g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
         if 'x_hats' in params:
             x_hats = params['x_hats']
+            x_hats = (x_hats * 2.) - 1.
             xgx = np.concatenate([x, g, x_hats], axis=-1)
             xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size, args.input_size))
             x, g, x_hats = xgx[:, :, :, :3], xgx[:, :, :, 3:5], xgx[:, :, :, 5:]
@@ -362,7 +360,7 @@ with tf.Session(config=config) as sess:
                 sess.run(initializer)
                 d = train_data.next(args.init_batch_size)
                 zs = np.random.uniform(size=(d.shape[0], vl.FLAGS.z_dim))
-                feed_dict = make_feed_dict(d, init=True, use_coordinates=True, z=zs, x_hats=d)  # manually retrieve exactly init_batch_size examples
+                feed_dict = make_feed_dict(d, init=True, use_coordinates=True, z=zs, x_hats=(d-127.5)/127.5)  # manually retrieve exactly init_batch_size examples
                 sess.run(init_pass, feed_dict)
             print('starting training')
 

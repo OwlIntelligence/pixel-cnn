@@ -280,6 +280,10 @@ def make_feed_dict(data, init=False, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
+    print(params['x_hats'].shape)
+    print(params['x_hats'].min(), params['x_hats'].min())
+
+
     if 'use_coordinates' in params and params['use_coordinates']:
         g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
         if 'x_hats' in params:

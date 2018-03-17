@@ -109,7 +109,7 @@ configs['celeba128-patch'] = {
     #'context_conditioning': True,
     "input_size": 32,
     "global_latent_dim": 100,
-    "spatial_latent_num_channel": 2,
+    "spatial_latent_num_channel": 5,
 }
 
 

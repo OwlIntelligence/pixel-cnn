@@ -52,6 +52,7 @@ def generative_network(z):
         net = tf.nn.sigmoid(net)
     return net
 
+
 def inference_network(x):
     with tf.variable_scope("inference_network"):
         net = tf.reshape(x, [-1, 128, 128, 3]) # 128x128x3
@@ -78,6 +79,7 @@ def inference_network(x):
         loc = net[:, :FLAGS.z_dim]
         log_var = net[:, FLAGS.z_dim:]
     return loc, log_var
+
 
 def sample_z(loc, log_var):
     with tf.variable_scope("sample_z"):

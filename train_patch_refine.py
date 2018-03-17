@@ -266,8 +266,6 @@ def sample_from_model(sess, data=None, **params):
 
 
 
-
-
 # init & save
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
@@ -293,9 +291,6 @@ def make_feed_dict(data, init=False, **params):
             xg = np.concatenate([x, g], axis=-1)
             xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
             x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
-
-
-
 
     # global conditioning
     if args.global_conditional:
@@ -362,7 +357,7 @@ with tf.Session(config=config) as sess:
                 sess.run(initializer)
                 d = train_data.next(args.init_batch_size)
                 zs = np.random.uniform(size=(d.shape[0], vl.FLAGS.z_dim))
-                feed_dict = make_feed_dict(d, init=True, use_coordinates=True, z=zs, x_hats=(d-127.5)/127.5)  # manually retrieve exactly init_batch_size examples
+                feed_dict = make_feed_dict(d, init=True, use_coordinates=True, z=zs, x_hats=(d/255.))  # manually retrieve exactly init_batch_size examples
                 sess.run(init_pass, feed_dict)
             print('starting training')
 

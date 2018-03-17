@@ -73,13 +73,13 @@ config_args(args, configs[args.config_name])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
 
 if args.nr_gpu == 1:
-    os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 elif args.nr_gpu == 2:
-    os.environ['CUDA_VISIBLE_DEVICES'] = '6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 elif args.nr_gpu == 3:
-    os.environ['CUDA_VISIBLE_DEVICES'] = '5,6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2'
 elif args.nr_gpu == 4:
-    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility
@@ -135,9 +135,23 @@ if args.global_conditional:
     ghs = [tf.placeholder(tf.float32, shape=(args.batch_size, args.global_latent_dim)) for i in range(args.nr_gpu)]
     gh_sample = ghs
 if args.spatial_conditional:
-    spatial_latent_shape = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel ##
-    sh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + spatial_latent_shape)
-    shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + spatial_latent_shape ) for i in range(args.nr_gpu)]
+    # spatial_latent_shape = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel ##
+    # sh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + spatial_latent_shape)
+    # shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + spatial_latent_shape ) for i in range(args.nr_gpu)]
+    shape_1 = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel
+    shape_2 = obs_shape[0]//2, obs_shape[1]//2, args.spatial_latent_num_channel
+    shape_4 = obs_shape[0]//4, obs_shape[1]//4, args.spatial_latent_num_channel
+
+    sh_1_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_1 )
+    sh_2_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_2 )
+    sh_4_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_4 )
+    sh_init = [sh_1_init, sh_2_init, sh_4_init]
+
+    sh_1 = [tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_1 ) for i in range(args.nr_gpu)]
+    sh_2 = [tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_2 ) for i in range(args.nr_gpu)]
+    sh_4 = [tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_4 ) for i in range(args.nr_gpu)]
+    shs = [[sh_1[i], sh_2[i], sh_4[i]] for i in range(args.nr_gpu)]
+
     sh_sample = shs
 
 
@@ -207,7 +221,7 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
 #train_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
 test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
-sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.25)
+sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.875)
 
 def sample_from_model(sess, data=None, **params):
     if type(data) is tuple:
@@ -241,20 +255,99 @@ def sample_from_model(sess, data=None, **params):
         global_lv = np.split(global_lv, args.nr_gpu)
         feed_dict.update({ghs[i]: global_lv[i] for i in range(args.nr_gpu)})
     if args.spatial_conditional:
-        spatial_lv = np.split(spatial_lv, args.nr_gpu)
-        feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
+        #spatial_lv = np.split(spatial_lv, args.nr_gpu)
+        #feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
 
+        slv_2 = grid.zoom_batch(spatial_lv, [obs_shape[0]//2, obs_shape[1]//2])
+        slv_4 = grid.zoom_batch(spatial_lv, [obs_shape[0]//4, obs_shape[1]//4])
+
+        spatial_lv = np.split(spatial_lv, args.nr_gpu)
+        slv_2 = np.split(slv_2, args.nr_gpu)
+        slv_4 = np.split(slv_4, args.nr_gpu)
+
+        feed_dict.update({sh_1[i]: spatial_lv[i] for i in range(args.nr_gpu)})
+        feed_dict.update({sh_2[i]: slv_2[i] for i in range(args.nr_gpu)})
+        feed_dict.update({sh_4[i]: slv_4[i] for i in range(args.nr_gpu)})
 
     x = np.split(x, args.nr_gpu)
     x_gen = [np.zeros_like(x[0]) for i in range(args.nr_gpu)]
 
-    for yi in range(0, obs_shape[0]):
-        for xi in range(0, obs_shape[1]):
+    for yi in range(obs_shape[0]):
+        for xi in range(obs_shape[1]):
             feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
             new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
             for i in range(args.nr_gpu):
                 x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
     return np.concatenate(x_gen, axis=0)
+
+
+
+
+
+# init & save
+initializer = tf.global_variables_initializer()
+saver = tf.train.Saver()
+
+
+def make_feed_dict(data, init=False, **params):
+    if type(data) is tuple:
+        x,y = data
+    else:
+        x = data
+        y = None
+    x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
+
+    if 'use_coordinates' in params and params['use_coordinates']:
+        g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
+        xg = np.concatenate([x, g], axis=-1)
+        xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
+        x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
+
+    # global conditioning
+    if args.global_conditional:
+        global_lv = []
+        if 'z' in params:
+            global_lv.append(params['z'])
+        global_lv = np.concatenate(global_lv, axis=-1)
+
+    # spatial conditioning
+    if args.spatial_conditional:
+        spatial_lv = []
+        if 'use_coordinates' in params and params['use_coordinates']:
+            spatial_lv.append(g)
+        spatial_lv = np.concatenate(spatial_lv, axis=-1)
+
+    if init:
+        feed_dict = {x_init: x}
+        if args.global_conditional:
+            feed_dict.update({gh_init: global_lv})
+        if args.spatial_conditional:
+
+            slv_2 = grid.zoom_batch(spatial_lv, [obs_shape[0]//2, obs_shape[1]//2])
+            slv_4 = grid.zoom_batch(spatial_lv, [obs_shape[0]//4, obs_shape[1]//4])
+            # feed_dict.update({sh_init: spatial_lv})
+            feed_dict.update({sh_1_init: spatial_lv})
+            feed_dict.update({sh_2_init: slv_2})
+            feed_dict.update({sh_4_init: slv_4})
+    else:
+        x = np.split(x, args.nr_gpu)
+        feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
+        if args.global_conditional:
+            global_lv = np.split(global_lv, args.nr_gpu)
+            feed_dict.update({ghs[i]: global_lv[i] for i in range(args.nr_gpu)})
+        if args.spatial_conditional:
+            slv_2 = grid.zoom_batch(spatial_lv, [obs_shape[0]//2, obs_shape[1]//2])
+            slv_4 = grid.zoom_batch(spatial_lv, [obs_shape[0]//4, obs_shape[1]//4])
+
+            spatial_lv = np.split(spatial_lv, args.nr_gpu)
+            slv_2 = np.split(slv_2, args.nr_gpu)
+            slv_4 = np.split(slv_4, args.nr_gpu)
+
+            # feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
+            feed_dict.update({sh_1[i]: spatial_lv[i] for i in range(args.nr_gpu)})
+            feed_dict.update({sh_2[i]: slv_2[i] for i in range(args.nr_gpu)})
+            feed_dict.update({sh_4[i]: slv_4[i] for i in range(args.nr_gpu)})
+    return feed_dict
 
 
 def complete(sess, data, mask, **params):
@@ -304,8 +397,19 @@ def complete(sess, data, mask, **params):
             spatial_lv = np.concatenate(spatial_lv, axis=-1)
 
         if args.spatial_conditional:
+            #spatial_lv = np.split(spatial_lv, args.nr_gpu)
+            #feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
+
+            slv_2 = grid.zoom_batch(spatial_lv, [obs_shape[0]//2, obs_shape[1]//2])
+            slv_4 = grid.zoom_batch(spatial_lv, [obs_shape[0]//4, obs_shape[1]//4])
+
             spatial_lv = np.split(spatial_lv, args.nr_gpu)
-            feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
+            slv_2 = np.split(slv_2, args.nr_gpu)
+            slv_4 = np.split(slv_4, args.nr_gpu)
+
+            feed_dict.update({sh_1[i]: spatial_lv[i] for i in range(args.nr_gpu)})
+            feed_dict.update({sh_2[i]: slv_2[i] for i in range(args.nr_gpu)})
+            feed_dict.update({sh_4[i]: slv_4[i] for i in range(args.nr_gpu)})
 
 
         x_gen = np.split(xw, args.nr_gpu)
@@ -324,51 +428,6 @@ def complete(sess, data, mask, **params):
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
-
-def make_feed_dict(data, init=False, **params):
-    if type(data) is tuple:
-        x,y = data
-    else:
-        x = data
-        y = None
-    x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
-
-    if 'use_coordinates' in params and params['use_coordinates']:
-        g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
-        xg = np.concatenate([x, g], axis=-1)
-        xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
-        x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
-
-    # global conditioning
-    if args.global_conditional:
-        global_lv = []
-        if 'z' in params:
-            global_lv.append(params['z'])
-        global_lv = np.concatenate(global_lv, axis=-1)
-
-    # spatial conditioning
-    if args.spatial_conditional:
-        spatial_lv = []
-        if 'use_coordinates' in params and params['use_coordinates']:
-            spatial_lv.append(g)
-        spatial_lv = np.concatenate(spatial_lv, axis=-1)
-
-    if init:
-        feed_dict = {x_init: x}
-        if args.global_conditional:
-            feed_dict.update({gh_init: global_lv})
-        if args.spatial_conditional:
-            feed_dict.update({sh_init: spatial_lv})
-    else:
-        x = np.split(x, args.nr_gpu)
-        feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
-        if args.global_conditional:
-            global_lv = np.split(global_lv, args.nr_gpu)
-            feed_dict.update({ghs[i]: global_lv[i] for i in range(args.nr_gpu)})
-        if args.spatial_conditional:
-            spatial_lv = np.split(spatial_lv, args.nr_gpu)
-            feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
-    return feed_dict
 
 
 # //////////// perform training //////////////

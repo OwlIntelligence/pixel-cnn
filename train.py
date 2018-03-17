@@ -72,13 +72,13 @@ config_args(args, configs[args.config_name])
 print('input args:\n', json.dumps(vars(args), indent=4, separators=(',',':'))) # pretty print args
 
 if args.nr_gpu == 1:
-    os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 elif args.nr_gpu == 2:
-    os.environ['CUDA_VISIBLE_DEVICES'] = '6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 elif args.nr_gpu == 3:
-    os.environ['CUDA_VISIBLE_DEVICES'] = '5,6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2'
 elif args.nr_gpu == 4:
-    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility

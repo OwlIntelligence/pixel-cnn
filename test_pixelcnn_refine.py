@@ -362,6 +362,7 @@ def complete(sess, data, mask, **params):
         mw = mask[h0:h1, w0:w1]
         # xw = x[:, h0:h1, w0:w1, :]
         x_hatsw = x_hats[:, h0:h1, w0:w1, :]
+        x_hatsws = np.split(x_hatsw, args.nr_gpu)
         yi, xi = p[0]-h0, p[1]-w0
 
         # spatial conditioning
@@ -382,7 +383,7 @@ def complete(sess, data, mask, **params):
         feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
         new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
         for i in range(args.nr_gpu):
-            x_ret[i][:,p[0],p[1],:] = new_x_gen_np[i][:,yi,xi,:]
+            x_ret[i][:,p[0],p[1],:] = x_hatsws[i][:,yi,xi,:] #new_x_gen_np[i][:,yi,xi,:]
 
         mask[p[0], p[1]] = 1
 

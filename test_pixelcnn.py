@@ -385,8 +385,8 @@ def complete(sess, data, mask, **params):
         print(p, window)
         [[h0, h1], [w0, w1]] = window
         g = global_g[:, h0:h1, w0:w1, :]
-        mw = mask[h0:h1, w0:w1]
-        xw = x[:, h0:h1, w0:w1, :]
+        #mw = mask[h0:h1, w0:w1]
+        #xw = x[:, h0:h1, w0:w1, :]
         yi, xi = p[0]-h0, p[1]-w0
 
         # spatial conditioning
@@ -412,7 +412,8 @@ def complete(sess, data, mask, **params):
             feed_dict.update({sh_4[i]: slv_4[i] for i in range(args.nr_gpu)})
 
 
-        x_gen = np.split(xw, args.nr_gpu)
+        #x_gen = np.split(xw, args.nr_gpu)
+        x_gen = [x_ret[i][:, h0:h1, w0:w1, :].copy() for i in range(args.nr_gpu)]
 
         feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
         new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)

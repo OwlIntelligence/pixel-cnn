@@ -165,7 +165,7 @@ with tf.Session(config=config) as sess:
     train_mgen = m.RandomRectangleMaskGenerator(64, 64, max_ratio=0.75)
     test_mgen = m.CenterMaskGenerator(64, 64, 0.5)
 
-    max_num_epoch = 1000
+    max_num_epoch = 100
     for epoch in range(max_num_epoch):
         tt = time.time()
         ls, mses, klds = [], [], []

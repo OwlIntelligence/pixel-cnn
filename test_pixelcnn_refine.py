@@ -423,7 +423,7 @@ with tf.Session(config=config) as sess:
     zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)
     sample_x = []
     for i in range(args.num_samples):
-        sample_x.append(complete(sess, data=d, mask=mask, use_coordinates=True, z=np.concatenate(zs, axis=0), x_hats=x_hats)) ##
+        sample_x.append(complete(sess, data=d, mask=mask, use_coordinates=True, z=zs, x_hats=x_hats)) ##
     sample_x = np.concatenate(sample_x,axis=0)
 
     sample_x = np.rint(sample_x * 127.5 + 127.5)

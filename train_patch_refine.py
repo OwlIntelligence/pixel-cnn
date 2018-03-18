@@ -135,7 +135,8 @@ if args.global_conditional:
     ghs = [tf.placeholder(tf.float32, shape=(args.batch_size, args.global_latent_dim)) for i in range(args.nr_gpu)]
     gh_sample = ghs
 if args.spatial_conditional:
-    spatial_latent_shape = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel ##
+    # spatial_latent_shape = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel ##
+    spatial_latent_shape = obs_shape[0]+4, obs_shape[1]+4, args.spatial_latent_num_channel
     sh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + spatial_latent_shape)
     shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + spatial_latent_shape ) for i in range(args.nr_gpu)]
     sh_sample = shs
@@ -223,8 +224,10 @@ def sample_from_model(sess, data=None, **params):
             x_hats = params['x_hats']
             x_hats = (x_hats * 2.) - 1.
             xgx = np.concatenate([x, g, x_hats], axis=-1)
-            xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size, args.input_size))
+            #xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size, args.input_size))
+            xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size+4, args.input_size+4))
             x, g, x_hats = xgx[:, :, :, :3], xgx[:, :, :, 3:5], xgx[:, :, :, 5:]
+            x = x[:, 2:args.input_size+2, 2:args.input_size+2, :] ##
         else:
             xg = np.concatenate([x, g], axis=-1)
             xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
@@ -285,8 +288,10 @@ def make_feed_dict(data, init=False, **params):
             x_hats = params['x_hats']
             x_hats = (x_hats * 2.) - 1.
             xgx = np.concatenate([x, g, x_hats], axis=-1)
-            xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size, args.input_size))
+            #xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size, args.input_size))
+            xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size+4, args.input_size+4))
             x, g, x_hats = xgx[:, :, :, :3], xgx[:, :, :, 3:5], xgx[:, :, :, 5:]
+            x = x[:, 2:args.input_size+2, 2:args.input_size+2, :] ##
         else:
             xg = np.concatenate([x, g], axis=-1)
             xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))

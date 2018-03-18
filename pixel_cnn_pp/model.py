@@ -34,12 +34,12 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
                 sh, sh_2, sh_4 = sh
             else:
                 sh = nn.latent_deconv_net(sh, scale_factor=1)
+                with arg_scope([nn.conv2d], nonlinearity=resnet_nonlinearity):
+                    sh = nn.conv2d(sh, nr_filters, filter_size=[3,3], stride=[1,1], pad='VALID')
+                    sh = nn.conv2d(sh, nr_filters, filter_size=[3,3], stride=[1,1], pad='VALID')
 
-                sh = nn.conv2d(sh, nr_filters, filter_size=[3,3], stride=[1,1], pad='SAME')
-                sh = nn.conv2d(sh, nr_filters, filter_size=[3,3], stride=[1,1], pad='SAME')
-
-                sh_2 = nn.conv2d(sh, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
-                sh_4 = nn.conv2d(sh_2, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
+                    sh_2 = nn.conv2d(sh, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
+                    sh_4 = nn.conv2d(sh_2, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
         else:
             sh_2, sh_4 = None, None
 

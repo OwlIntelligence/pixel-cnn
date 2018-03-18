@@ -263,7 +263,7 @@ def sample_from_model(sess, data=None, **params):
             for i in range(args.nr_gpu):
                 x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
     #return np.concatenate(x_gen, axis=0)
-    return np.concatenate(x_hats, axis=0), np.concatenate(x_gen, axis=0)
+    return x_hats, np.concatenate(x_gen, axis=0)
 
 
 def make_feed_dict(data, init=False, **params):

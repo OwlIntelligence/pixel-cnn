@@ -185,7 +185,7 @@ for i in range(args.nr_gpu):
                 epsilon = 0.5 - 1e-5
             else:
                 epsilon = 1e-5
-            epsilon = 1e-5# 0.05
+            epsilon = 0.1
             new_x_gen.append(nn.sample_from_discretized_mix_logistic(out, args.nr_logistic_mix, epsilon=epsilon))
 
 # add losses and gradients together and get training updates
@@ -383,7 +383,7 @@ def complete(sess, data, mask, **params):
         feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
         new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
         for i in range(args.nr_gpu):
-            x_ret[i][:,p[0],p[1],:] = x_hatsws[i][:,yi,xi,:] #new_x_gen_np[i][:,yi,xi,:]
+            x_ret[i][:,p[0],p[1],:] = new_x_gen_np[i][:,yi,xi,:]
 
         mask[p[0], p[1]] = 1
 

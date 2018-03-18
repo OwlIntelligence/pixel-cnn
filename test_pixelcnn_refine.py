@@ -262,7 +262,8 @@ def sample_from_model(sess, data=None, **params):
             new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
             for i in range(args.nr_gpu):
                 x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
-    return np.concatenate(x_gen, axis=0)
+    #return np.concatenate(x_gen, axis=0)
+    return np.concatenate(x_hats, axis=0), np.concatenate(x_gen, axis=0)
 
 
 def make_feed_dict(data, init=False, **params):
@@ -415,17 +416,38 @@ with tf.Session(config=config) as sess:
     saver.restore(sess, ckpt_file)
 
     d = next(test_data)
-    sample_mgen = um.CenterMaskGenerator(128, 128, 24./64)#um.RectangleMaskGenerator(128, 128, (96, 128-24, 128, 24))
-    mask = sample_mgen.gen(1)[0]
+    # sample_mgen = um.RectangleMaskGenerator(128, 128, (96, 128-24, 128, 24))
+    # mask = sample_mgen.gen(1)[0]
+    #
+    # feed_dict = vl.make_feed_dict(d)
+    # ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
+    # zs, x_hats = ret[:args.nr_gpu], ret[args.nr_gpu:]
+    # zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)
+    # sample_x = []
+    # for i in range(args.num_samples):
+    #     sample_x.append(complete(sess, data=d, mask=mask, use_coordinates=True, z=zs, x_hats=x_hats)) ##
+    # sample_x = np.concatenate(sample_x,axis=0)
 
+    #
     feed_dict = vl.make_feed_dict(d)
     ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
     zs, x_hats = ret[:args.nr_gpu], ret[args.nr_gpu:]
     zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)
     sample_x = []
+    vae_x = []
     for i in range(args.num_samples):
-        sample_x.append(complete(sess, data=d, mask=mask, use_coordinates=True, z=zs, x_hats=x_hats)) ##
+        x_vae, x_s = sample_from_model(sess, data=d, use_coordinates=True, z=zs, x_hats=x_hats)
+        sample_x.append(x_s)
+        vae_x.append(x_vae)
     sample_x = np.concatenate(sample_x,axis=0)
+    vae_x = np.concatenate(vae_x,axis=0)
+
+    vae_x = np.rint(vae_x * 127.5 + 127.5)
+    from PIL import Image
+    img = Image.fromarray(uf.tile_images(vae_x.astype(np.uint8), size=(8,8)), 'RGB')
+    img.save(os.path.join("plots", '%s_ori_%s.png' % (args.data_set, "test")))
+    #
+
 
     sample_x = np.rint(sample_x * 127.5 + 127.5)
 

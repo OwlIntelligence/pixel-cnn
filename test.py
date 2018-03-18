@@ -8,7 +8,8 @@ import pixel_cnn_pp.nn as nn
 from utils import plotting
 from pixel_cnn_pp.nn import adam_updates
 import utils.mask as m
-import vae_loading as v
+# import vae_loading as v
+import svae_loading as v
 import utils.mfunc as uf
 
 
@@ -23,21 +24,19 @@ with tf.Session(config=config) as sess:
     test_mgen = m.CenterMaskGenerator(128, 128, .5)
 
     data = next(test_data)
-    data = uf.mask_inputs(data, test_mgen)[:,:,:,:3]
 
     # img_tile = plotting.img_tile(data[:25], aspect_ratio=1.0, border_color=1.0, stretch=True)
     # img = plotting.plot_img(img_tile, title=v.FLAGS.data_set + ' samples')
     # plotting.plt.savefig(os.path.join("plots",'%s_vae_original.png' % (v.FLAGS.data_set)))
 
 
-    feed_dict = v.make_feed_dict(data, test_mgen)
+    feed_dict = v.make_feed_dict(data)
     sample_x = sess.run(v.x_hats, feed_dict=feed_dict)
     sample_x = np.concatenate(sample_x, axis=0)
-    sample_mask = uf.broadcast_mask(test_mgen.gen(1)[0], 3, data.shape[0])
+
     data = np.cast[np.float32](data/255.)
-    sample_x = sample_x * (1-sample_mask) + data * sample_mask
-    test_data.reset()
+    sample_x = sample_x - data
 
     img_tile = plotting.img_tile(sample_x[:25], aspect_ratio=1.0, border_color=1.0, stretch=True)
     img = plotting.plot_img(img_tile, title=v.FLAGS.data_set + ' samples')
-    plotting.plt.savefig(os.path.join("plots",'%s_vae_complete.png' % (v.FLAGS.data_set)))
+    plotting.plt.savefig(os.path.join("plots",'%s_vae_diff.png' % (v.FLAGS.data_set)))

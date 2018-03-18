@@ -16,6 +16,7 @@ tf.flags.DEFINE_integer("nr_gpu", default_value=1, docstring="number of GPUs")
 tf.flags.DEFINE_integer("save_interval", default_value=5, docstring="")
 tf.flags.DEFINE_float("lam", default_value=1., docstring="")
 tf.flags.DEFINE_float("beta", default_value=1., docstring="")
+tf.flags.DEFINE_float("learning_rate", default_value=0.0001, docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")
 tf.flags.DEFINE_string("data_set", default_value="celeba128", docstring="")
@@ -128,7 +129,7 @@ with tf.device('/gpu:0'):
     MSE = tf.concat(MSEs, axis=0)
     KLD = tf.concat(KLDs, axis=0)
 
-    train_step = adam_updates(all_params, grads[0], lr=0.0001)
+    train_step = adam_updates(all_params, grads[0], lr=FLAGS.learning_rate)
 
     loss = losses[0] / FLAGS.nr_gpu
 

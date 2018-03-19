@@ -426,7 +426,7 @@ with tf.Session(config=config) as sess:
     saver.restore(sess, ckpt_file)
 
     d = next(test_data)
-    sample_mgen = um.RectangleMaskGenerator(128, 128, (96, 128-24, 128, 24))
+    sample_mgen = um.RectangleMaskGenerator(128, 128, (96, 128-20, 125, 20))
     #sample_mgen = um.CenterMaskGenerator(128, 128, 24./64)
     mask = sample_mgen.gen(1)[0]
 

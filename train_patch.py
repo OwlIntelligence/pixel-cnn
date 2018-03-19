@@ -394,6 +394,8 @@ with tf.Session(config=config) as sess:
 
     vl.load_vae(sess, vl.saver)
 
+    vl_mgen = um.RandomRectangleMaskGenerator(128, 128, max_ratio=.5)
+
     for epoch in range(args.max_epochs):
         begin = time.time()
 
@@ -416,7 +418,7 @@ with tf.Session(config=config) as sess:
         # train for one epoch
         train_losses = []
         for d in train_data:
-            feed_dict = vl.make_feed_dict(d)
+            feed_dict = vl.make_feed_dict(d, vl_mgen)
             zs = sess.run(vl.zs, feed_dict=feed_dict)
             feed_dict = make_feed_dict(d, mask_generator=train_mgen, z=np.concatenate(zs, axis=0))
             # forward/backward/update model on each gpu
@@ -429,7 +431,7 @@ with tf.Session(config=config) as sess:
         # compute likelihood over test data
         test_losses = []
         for d in test_data:
-            feed_dict = vl.make_feed_dict(d)
+            feed_dict = vl.make_feed_dict(d, vl_mgen)
             zs = sess.run(vl.zs, feed_dict=feed_dict)
             feed_dict = make_feed_dict(d, mask_generator=test_mgen, z=np.concatenate(zs, axis=0))
             l = sess.run(bits_per_dim_test, feed_dict)

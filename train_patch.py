@@ -222,8 +222,8 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 # mask generator
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
 #train_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
-test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.5)
-sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.5)
+test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.75)
+sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.75)
 
 def sample_from_model(sess, data=None, **params):
     if type(data) is tuple:
@@ -291,7 +291,6 @@ def sample_from_model(sess, data=None, **params):
     for yi in range(obs_shape[0]):
         for xi in range(obs_shape[1]):
             if ('mask_generator' not in params) or ms[0][yi, xi]==0:
-                print(yi, xi)
                 feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
                 new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
                 for i in range(args.nr_gpu):

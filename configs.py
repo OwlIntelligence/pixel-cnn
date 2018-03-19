@@ -95,9 +95,9 @@ configs['celeba128'] = {
     "nr_gpu": 4,
 }
 
-configs['celeba64'] = {
+configs['celeba64-cond'] = {
     "data_dir": "/data/ziz/not-backed-up/jxu/CelebA",
-    "save_dir": "/data/ziz/jxu/models/celeba128-patch-4",
+    "save_dir": "/data/ziz/jxu/models/celeba64-cond",
     "nr_filters": 100,
     "nr_resnet": 4,
     "data_set": "celeba64",

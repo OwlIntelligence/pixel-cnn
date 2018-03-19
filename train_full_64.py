@@ -81,6 +81,8 @@ elif args.nr_gpu == 3:
     os.environ['CUDA_VISIBLE_DEVICES'] = '5,6,7'
 elif args.nr_gpu == 4:
     os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+elif args.nr_gpu == 6:
+    os.environ['CUDA_VISIBLE_DEVICES'] = '2,3,4,5,6,7'
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility
@@ -222,8 +224,8 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 # mask generator
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
 #train_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
-test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.75)
-sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.75)
+test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.5)
+sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.5)
 
 def sample_from_model(sess, data=None, **params):
     if type(data) is tuple:

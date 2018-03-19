@@ -426,11 +426,11 @@ with tf.Session(config=config) as sess:
     saver.restore(sess, ckpt_file)
 
     d = next(test_data)
-    sample_mgen = um.RectangleMaskGenerator(128, 128, (96, 128-20, 125, 20))
+    sample_mgen = um.RectangleMaskGenerator(128, 128, (40, 128-20, 125, 20))
     #sample_mgen = um.CenterMaskGenerator(128, 128, 24./64)
     mask = sample_mgen.gen(1)[0]
 
-    feed_dict = vl.make_feed_dict(d)
+    feed_dict = vl.make_feed_dict(d, sample_mgen)
     ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
     zs, x_hats = ret[:args.nr_gpu], ret[args.nr_gpu:]
     zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)

@@ -30,7 +30,7 @@ with tf.Session(config=config) as sess:
     # plotting.plt.savefig(os.path.join("plots",'%s_vae_original.png' % (v.FLAGS.data_set)))
 
 
-    feed_dict = v.make_feed_dict(data)
+    feed_dict = v.make_feed_dict(data, test_mgen)
     sample_x = sess.run(v.x_hats, feed_dict=feed_dict)
     sample_x = np.concatenate(sample_x, axis=0)
 

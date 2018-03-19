@@ -107,6 +107,7 @@ configs['celeba128-patch'] = {
     "map_sampling": False,
     "nr_gpu": 4,
     'context_conditioning': True,
+    'use_coordinates': True,
     "input_size": 32,
     "global_latent_dim": 640, #100,
     "spatial_latent_num_channel": 3,

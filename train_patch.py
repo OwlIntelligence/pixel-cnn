@@ -127,32 +127,35 @@ else:
 # data place holders
 x_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + obs_shape)
 xs = [tf.placeholder(tf.float32, shape=(args.batch_size, ) + obs_shape) for i in range(args.nr_gpu)]
-gh_init, sh_init = None, None
-ghs, shs, gh_sample, sh_sample = [[None] * args.nr_gpu for i in range(4)]
+gh_init, sh_init, ch_init = None, None
+ghs, shs, chs, gh_sample, sh_sample, ch_sample = [[None] * args.nr_gpu for i in range(4)]
 
 if args.global_conditional:
     gh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size, args.global_latent_dim))
     ghs = [tf.placeholder(tf.float32, shape=(args.batch_size, args.global_latent_dim)) for i in range(args.nr_gpu)]
     gh_sample = ghs
 if args.spatial_conditional:
-    # spatial_latent_shape = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel ##
-    # sh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + spatial_latent_shape)
-    # shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + spatial_latent_shape ) for i in range(args.nr_gpu)]
-    shape_1 = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel
-    shape_2 = obs_shape[0]//2, obs_shape[1]//2, args.spatial_latent_num_channel
-    shape_4 = obs_shape[0]//4, obs_shape[1]//4, args.spatial_latent_num_channel
-
-    sh_1_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_1 )
-    sh_2_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_2 )
-    sh_4_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_4 )
-    sh_init = [sh_1_init, sh_2_init, sh_4_init]
-
-    sh_1 = [tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_1 ) for i in range(args.nr_gpu)]
-    sh_2 = [tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_2 ) for i in range(args.nr_gpu)]
-    sh_4 = [tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_4 ) for i in range(args.nr_gpu)]
-    shs = [[sh_1[i], sh_2[i], sh_4[i]] for i in range(args.nr_gpu)]
-
+    spatial_latent_shape = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel ##
+    sh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + spatial_latent_shape)
+    shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + spatial_latent_shape ) for i in range(args.nr_gpu)]
     sh_sample = shs
+    if args.context_conditioning:
+        shape_1 = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel
+        shape_2 = obs_shape[0]//2, obs_shape[1]//2, args.spatial_latent_num_channel
+        shape_4 = obs_shape[0]//4, obs_shape[1]//4, args.spatial_latent_num_channel
+
+        ch_1_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_1 )
+        ch_2_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_2 )
+        ch_4_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_4 )
+        ch_init = [ch_1_init, ch_2_init, ch_4_init]
+
+        ch_1 = [tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_1 ) for i in range(args.nr_gpu)]
+        ch_2 = [tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_2 ) for i in range(args.nr_gpu)]
+        ch_4 = [tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_4 ) for i in range(args.nr_gpu)]
+        chs = [[ch_1[i], ch_2[i], ch_4[i]] for i in range(args.nr_gpu)]
+        ch_sample = chs
+
+
 
 
 
@@ -161,7 +164,7 @@ model_opt = { 'nr_resnet': args.nr_resnet, 'nr_filters': args.nr_filters, 'nr_lo
 model = tf.make_template('model', model_spec)
 
 # run once for data dependent initialization of parameters
-init_pass = model(x_init, gh_init, sh_init, init=True, dropout_p=args.dropout_p, **model_opt)
+init_pass = model(x_init, gh_init, sh_init, ch_init, init=True, dropout_p=args.dropout_p, **model_opt)
 
 # keep track of moving average
 all_params = tf.trainable_variables()
@@ -177,7 +180,7 @@ new_x_gen = []
 for i in range(args.nr_gpu):
     with tf.device('/gpu:%d' % i):
         # train
-        out = model(xs[i], ghs[i], shs[i], ema=None, dropout_p=args.dropout_p, **model_opt)
+        out = model(xs[i], ghs[i], shs[i], chs[i], ema=None, dropout_p=args.dropout_p, **model_opt)
         mask_tf = None
         if args.context_conditioning:
             mask_tf = shs[i][:, :, :, -1]
@@ -187,11 +190,11 @@ for i in range(args.nr_gpu):
         grads.append(tf.gradients(loss_gen[i], all_params, colocate_gradients_with_ops=True))
 
         # test
-        out = model(xs[i], ghs[i], shs[i], ema=ema, dropout_p=0., **model_opt)
+        out = model(xs[i], ghs[i], shs[i], chs[i], ema=ema, dropout_p=0., **model_opt)
         loss_gen_test.append(loss_fun(xs[i], out, masks=mask_tf))
 
         # sample
-        out = model(xs[i], gh_sample[i], sh_sample[i], ema=ema, dropout_p=0, **model_opt)
+        out = model(xs[i], gh_sample[i], sh_sample[i], ch_sample[i], ema=ema, dropout_p=0, **model_opt)
         if args.energy_distance:
             new_x_gen.append(out[0])
         else:
@@ -249,6 +252,8 @@ def sample_from_model(sess, data=None, **params):
         spatial_lv = []
         if 'use_coordinates' in params and params['use_coordinates']:
             spatial_lv.append(g)
+        if args.context_conditioning:
+            spatial_lv.append(x)
         spatial_lv = np.concatenate(spatial_lv, axis=-1)
 
     if args.global_conditional:
@@ -315,6 +320,8 @@ def make_feed_dict(data, init=False, **params):
         spatial_lv = []
         if 'use_coordinates' in params and params['use_coordinates']:
             spatial_lv.append(g)
+        if args.context_conditioning:
+            spatial_lv.append(x)
         spatial_lv = np.concatenate(spatial_lv, axis=-1)
 
     if init:

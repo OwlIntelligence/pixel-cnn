@@ -7,7 +7,7 @@ import tensorflow as tf
 from tensorflow.contrib.framework.python.ops import arg_scope
 import pixel_cnn_pp.nn as nn
 
-def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_filters=160, nr_logistic_mix=10, resnet_nonlinearity='concat_elu', energy_distance=False, global_conditional=False, spatial_conditional=False):
+def model_spec(x, gh=None, sh=None, ch=None, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_filters=160, nr_logistic_mix=10, resnet_nonlinearity='concat_elu', energy_distance=False, global_conditional=False, spatial_conditional=False):
     """
     We receive a Tensor x of shape (N,H,W,D1) (e.g. (12,32,32,3)) and produce
     a Tensor x_out of shape (N,H,W,D2) (e.g. (12,32,32,100)), where each fiber
@@ -29,19 +29,32 @@ def model_spec(x, gh=None, sh=None, init=False, ema=None, dropout_p=0.5, nr_resn
         else:
             raise('resnet nonlinearity ' + resnet_nonlinearity + ' is not supported')
 
-        if spatial_conditional:
-            if type(sh)==list:
-                sh, sh_2, sh_4 = sh
-            else:
-                sh = nn.latent_deconv_net(sh, scale_factor=1)
-                with arg_scope([nn.conv2d], nonlinearity=resnet_nonlinearity):
-                    sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='VALID')
-                    sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='VALID')
+        # if spatial_conditional:
+        #     if type(sh)==list:
+        #         sh, sh_2, sh_4 = sh
+        #     else:
+        #         sh = nn.latent_deconv_net(sh, scale_factor=1)
+        #         with arg_scope([nn.conv2d], nonlinearity=resnet_nonlinearity):
+        #             sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='VALID')
+        #             sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='VALID')
+        #
+        #             sh_2 = nn.conv2d(sh, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
+        #             sh_4 = nn.conv2d(sh_2, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
+        # else:
+        #     sh_2, sh_4 = None, None
 
-                    sh_2 = nn.conv2d(sh, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
-                    sh_4 = nn.conv2d(sh_2, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
-        else:
-            sh_2, sh_4 = None, None
+        if spatial_conditional and sh is not None:
+            with arg_scope([nn.conv2d], nonlinearity=resnet_nonlinearity):
+                sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='VALID')
+                sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='VALID')
+                sh_2 = nn.conv2d(sh, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
+                sh_4 = nn.conv2d(sh_2, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
+            if ch is not None:
+                ch_1, ch_2, ch_4 = ch
+                sh = tf.concat([sh, ch_1], axis=-1)
+                sh_2 = tf.concat([sh_2, ch_2], axis=-1)
+                sh_4 = tf.concat([sh_4, ch_4], axis=-1)
+
 
         with arg_scope([nn.gated_resnet], nonlinearity=resnet_nonlinearity, gh=gh, sh=sh):
 

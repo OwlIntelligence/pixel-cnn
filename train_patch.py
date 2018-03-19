@@ -356,7 +356,7 @@ if not os.path.exists(args.save_dir):
 test_bpd = []
 lr = args.learning_rate
 
-import vae_loading as vl
+import svae_loading as vl
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

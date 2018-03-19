@@ -437,6 +437,7 @@ with tf.Session(config=config) as sess:
         sys.stdout.flush()
 
         if epoch % args.save_interval == 0:
+            time.sleep(300)
 
             # generate samples from the model
             d = next(test_data)

@@ -141,9 +141,9 @@ if args.spatial_conditional:
     shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + spatial_latent_shape ) for i in range(args.nr_gpu)]
     sh_sample = shs
 if args.use_coordinates:
-    shape_1 = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel
-    shape_2 = obs_shape[0]//2, obs_shape[1]//2, args.spatial_latent_num_channel
-    shape_4 = obs_shape[0]//4, obs_shape[1]//4, args.spatial_latent_num_channel
+    shape_1 = obs_shape[0], obs_shape[1], 2
+    shape_2 = obs_shape[0]//2, obs_shape[1]//2, 2
+    shape_4 = obs_shape[0]//4, obs_shape[1]//4, 2
 
     ch_1_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_1 )
     ch_2_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_2 )

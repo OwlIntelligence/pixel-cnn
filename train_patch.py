@@ -158,8 +158,6 @@ if args.use_coordinates:
 
 
 
-
-
 # create the model
 model_opt = { 'nr_resnet': args.nr_resnet, 'nr_filters': args.nr_filters, 'nr_logistic_mix': args.nr_logistic_mix, 'resnet_nonlinearity': args.resnet_nonlinearity, 'energy_distance': args.energy_distance, 'global_conditional':args.global_conditional, 'spatial_conditional':args.spatial_conditional}
 model = tf.make_template('model', model_spec)
@@ -235,6 +233,7 @@ def sample_from_model(sess, data=None, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
+
     if args.use_coordinates:
         g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
         xg = np.concatenate([x, g], axis=-1)
@@ -242,6 +241,12 @@ def sample_from_model(sess, data=None, **params):
         x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
     else:
         x, _ = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
+
+    if 'mask_generator' in params:
+        mgen = params['mask_generator']
+        ms = mgen.gen(x.shape[0])
+        x_masked = x * uf.broadcast_mask(ms, 3)
+        x_masked = np.concatenate([x_masked, uf.broadcast_mask(ms, 1)], axis=-1)
 
     # global conditioning
     if args.global_conditional:
@@ -254,7 +259,7 @@ def sample_from_model(sess, data=None, **params):
     if args.spatial_conditional:
         spatial_lv = []
         if args.context_conditioning:
-            spatial_lv.append(x)
+            spatial_lv.append(x_masked)
         spatial_lv = np.concatenate(spatial_lv, axis=-1)
 
     # coordinates conditioning:
@@ -291,8 +296,6 @@ def sample_from_model(sess, data=None, **params):
 
 
 
-
-
 # init & save
 initializer = tf.global_variables_initializer()
 saver = tf.train.Saver()
@@ -306,6 +309,7 @@ def make_feed_dict(data, init=False, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
+
     if args.use_coordinates:
         g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
         xg = np.concatenate([x, g], axis=-1)
@@ -313,6 +317,12 @@ def make_feed_dict(data, init=False, **params):
         x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
     else:
         x, _ = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
+
+    if 'mask_generator' in params:
+        mgen = params['mask_generator']
+        ms = mgen.gen(x.shape[0])
+        x_masked = x * uf.broadcast_mask(ms, 3)
+        x_masked = np.concatenate([x_masked, uf.broadcast_mask(ms, 1)], axis=-1)
 
     # global conditioning
     if args.global_conditional:
@@ -325,7 +335,7 @@ def make_feed_dict(data, init=False, **params):
     if args.spatial_conditional:
         spatial_lv = []
         if args.context_conditioning:
-            spatial_lv.append(x)
+            spatial_lv.append(x_masked)
         spatial_lv = np.concatenate(spatial_lv, axis=-1)
 
 
@@ -396,7 +406,7 @@ with tf.Session(config=config) as sess:
                 sess.run(initializer)
                 d = train_data.next(args.init_batch_size)
                 zs = np.random.uniform(size=(d.shape[0], vl.FLAGS.z_dim))
-                feed_dict = make_feed_dict(d, init=True, use_coordinates=True, z=zs)  # manually retrieve exactly init_batch_size examples
+                feed_dict = make_feed_dict(d, init=True, mask_generator=train_mgen, z=zs)  # manually retrieve exactly init_batch_size examples
                 sess.run(init_pass, feed_dict)
             print('starting training')
 
@@ -405,7 +415,7 @@ with tf.Session(config=config) as sess:
         for d in train_data:
             feed_dict = vl.make_feed_dict(d)
             zs = sess.run(vl.zs, feed_dict=feed_dict)
-            feed_dict = make_feed_dict(d, use_coordinates=True, z=np.concatenate(zs, axis=0))
+            feed_dict = make_feed_dict(d, mask_generator=train_mgen, z=np.concatenate(zs, axis=0))
             # forward/backward/update model on each gpu
             lr *= args.lr_decay
             feed_dict.update({ tf_lr: lr })
@@ -418,7 +428,7 @@ with tf.Session(config=config) as sess:
         for d in test_data:
             feed_dict = vl.make_feed_dict(d)
             zs = sess.run(vl.zs, feed_dict=feed_dict)
-            feed_dict = make_feed_dict(d, use_coordinates=True, z=np.concatenate(zs, axis=0))
+            feed_dict = make_feed_dict(d, mask_generator=test_mgen, z=np.concatenate(zs, axis=0))
             l = sess.run(bits_per_dim_test, feed_dict)
             test_losses.append(l)
         test_loss_gen = np.mean(test_losses)
@@ -436,7 +446,7 @@ with tf.Session(config=config) as sess:
             zs = sess.run(vl.zs, feed_dict=feed_dict)
             sample_x = []
             for i in range(args.num_samples):
-                sample_x.append(sample_from_model(sess, data=d, use_coordinates=True, z=np.concatenate(zs, axis=0))) ##
+                sample_x.append(sample_from_model(sess, data=d, mask_generator=test_mgen, z=np.concatenate(zs, axis=0))) ##
             sample_x = np.concatenate(sample_x,axis=0)
             img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
             img = plotting.plot_img(img_tile, title=args.data_set + ' samples')

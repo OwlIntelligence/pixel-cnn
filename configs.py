@@ -112,7 +112,7 @@ configs['celeba128-patch'] = {
     'use_coordinates': True,
     "input_size": 32,
     "global_latent_dim": 640, #100,
-    "spatial_latent_num_channel": 3,
+    "spatial_latent_num_channel": 4,
 }
 
 # configs['celeba128-patch'] = {

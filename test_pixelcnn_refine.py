@@ -135,7 +135,8 @@ if args.global_conditional:
     ghs = [tf.placeholder(tf.float32, shape=(args.batch_size, args.global_latent_dim)) for i in range(args.nr_gpu)]
     gh_sample = ghs
 if args.spatial_conditional:
-    spatial_latent_shape = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel ##
+    # spatial_latent_shape = obs_shape[0], obs_shape[1], args.spatial_latent_num_channel ##
+    spatial_latent_shape = obs_shape[0]+4, obs_shape[1]+4, args.spatial_latent_num_channel
     sh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + spatial_latent_shape)
     shs = [tf.placeholder(tf.float32, shape=(args.batch_size,) + spatial_latent_shape ) for i in range(args.nr_gpu)]
     sh_sample = shs
@@ -223,8 +224,10 @@ def sample_from_model(sess, data=None, **params):
             x_hats = params['x_hats']
             x_hats = (x_hats * 2.) - 1.
             xgx = np.concatenate([x, g, x_hats], axis=-1)
-            xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size, args.input_size))
+            #xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size, args.input_size))
+            xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size+4, args.input_size+4))
             x, g, x_hats = xgx[:, :, :, :3], xgx[:, :, :, 3:5], xgx[:, :, :, 5:]
+            x = x[:, 2:args.input_size+2, 2:args.input_size+2, :] ##
         else:
             xg = np.concatenate([x, g], axis=-1)
             xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
@@ -262,8 +265,13 @@ def sample_from_model(sess, data=None, **params):
             new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
             for i in range(args.nr_gpu):
                 x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
-    #return np.concatenate(x_gen, axis=0)
-    return x_hats, np.concatenate(x_gen, axis=0)
+    return np.concatenate(x_gen, axis=0)
+
+
+
+# init & save
+initializer = tf.global_variables_initializer()
+saver = tf.train.Saver()
 
 
 def make_feed_dict(data, init=False, **params):
@@ -280,8 +288,10 @@ def make_feed_dict(data, init=False, **params):
             x_hats = params['x_hats']
             x_hats = (x_hats * 2.) - 1.
             xgx = np.concatenate([x, g, x_hats], axis=-1)
-            xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size, args.input_size))
+            #xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size, args.input_size))
+            xgx, _ = uf.random_crop_images(xgx, output_size=(args.input_size+4, args.input_size+4))
             x, g, x_hats = xgx[:, :, :, :3], xgx[:, :, :, 3:5], xgx[:, :, :, 5:]
+            x = x[:, 2:args.input_size+2, 2:args.input_size+2, :] ##
         else:
             xg = np.concatenate([x, g], axis=-1)
             xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
@@ -359,10 +369,10 @@ def complete(sess, data, mask, **params):
         window = uf.find_maximally_conditioned_window(mask, 32, p)
         print(p, window)
         [[h0, h1], [w0, w1]] = window
-        g = global_g[:, h0:h1, w0:w1, :]
-        mw = mask[h0:h1, w0:w1]
+        g = global_g[:, h0-2:h1+2, w0-2:w1+2, :]
+        # mw = mask[h0:h1, w0:w1]
         # xw = x[:, h0:h1, w0:w1, :]
-        x_hatsw = x_hats[:, h0:h1, w0:w1, :]
+        x_hatsw = x_hats[:, h0-2:h1+2, w0-2:w1+2, :]
         x_hatsws = np.split(x_hatsw, args.nr_gpu)
         yi, xi = p[0]-h0, p[1]-w0
 
@@ -403,7 +413,7 @@ if not os.path.exists(args.save_dir):
 test_bpd = []
 lr = args.learning_rate
 
-import vae_loading as vl
+import svae_loading as vl
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -417,35 +427,37 @@ with tf.Session(config=config) as sess:
 
     d = next(test_data)
     # sample_mgen = um.RectangleMaskGenerator(128, 128, (96, 128-24, 128, 24))
-    # mask = sample_mgen.gen(1)[0]
+    sample_mgen = um.CenterMaskGenerator(128, 128, 0.5)
+    mask = sample_mgen.gen(1)[0]
+
+    feed_dict = vl.make_feed_dict(d)
+    ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
+    zs, x_hats = ret[:args.nr_gpu], ret[args.nr_gpu:]
+    zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)
+    sample_x = []
+    for i in range(args.num_samples):
+        sample_x.append(complete(sess, data=d, mask=mask, use_coordinates=True, z=zs, x_hats=x_hats)) ##
+    sample_x = np.concatenate(sample_x,axis=0)
+
+
     #
     # feed_dict = vl.make_feed_dict(d)
     # ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
     # zs, x_hats = ret[:args.nr_gpu], ret[args.nr_gpu:]
     # zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)
     # sample_x = []
+    # vae_x = []
     # for i in range(args.num_samples):
-    #     sample_x.append(complete(sess, data=d, mask=mask, use_coordinates=True, z=zs, x_hats=x_hats)) ##
+    #     x_vae, x_s = sample_from_model(sess, data=d, use_coordinates=True, z=zs, x_hats=x_hats)
+    #     sample_x.append(x_s)
+    #     vae_x.append(x_vae)
     # sample_x = np.concatenate(sample_x,axis=0)
-
+    # vae_x = np.concatenate(vae_x,axis=0)
     #
-    feed_dict = vl.make_feed_dict(d)
-    ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
-    zs, x_hats = ret[:args.nr_gpu], ret[args.nr_gpu:]
-    zs, x_hats = np.concatenate(zs, axis=0), np.concatenate(x_hats, axis=0)
-    sample_x = []
-    vae_x = []
-    for i in range(args.num_samples):
-        x_vae, x_s = sample_from_model(sess, data=d, use_coordinates=True, z=zs, x_hats=x_hats)
-        sample_x.append(x_s)
-        vae_x.append(x_vae)
-    sample_x = np.concatenate(sample_x,axis=0)
-    vae_x = np.concatenate(vae_x,axis=0)
-
-    vae_x = np.rint(vae_x * 127.5 + 127.5)
-    from PIL import Image
-    img = Image.fromarray(uf.tile_images(vae_x.astype(np.uint8), size=(8,8)), 'RGB')
-    img.save(os.path.join("plots", '%s_ori_%s.png' % (args.data_set, "test")))
+    # vae_x = np.rint(vae_x * 127.5 + 127.5)
+    # from PIL import Image
+    # img = Image.fromarray(uf.tile_images(vae_x.astype(np.uint8), size=(8,8)), 'RGB')
+    # img.save(os.path.join("plots", '%s_ori_%s.png' % (args.data_set, "test")))
     #
 
 

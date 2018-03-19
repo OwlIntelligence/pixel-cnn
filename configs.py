@@ -110,7 +110,7 @@ configs['celeba64-cond'] = {
     "nr_gpu": 4,
     'context_conditioning': True,
     'use_coordinates': False,
-    "input_size": 32,
+    "input_size": 64,
     #"global_latent_dim": 640, #100,
     "spatial_latent_num_channel": 4,
 }

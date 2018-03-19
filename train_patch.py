@@ -394,7 +394,7 @@ with tf.Session(config=config) as sess:
 
     vl.load_vae(sess, vl.saver)
 
-    vl_mgen = um.RandomRectangleMaskGenerator(128, 128, max_ratio=.5)
+    vl_mgen = um.RandomRectangleMaskGenerator(img_shape[0], img_shape[1], max_ratio=.5)
 
     for epoch in range(args.max_epochs):
         begin = time.time()

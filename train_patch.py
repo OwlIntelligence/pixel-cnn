@@ -128,7 +128,7 @@ else:
 x_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + obs_shape)
 xs = [tf.placeholder(tf.float32, shape=(args.batch_size, ) + obs_shape) for i in range(args.nr_gpu)]
 gh_init, sh_init, ch_init = None, None, None
-ghs, shs, chs, gh_sample, sh_sample, ch_sample = [[None] * args.nr_gpu for i in range(5)]
+ghs, shs, chs, gh_sample, sh_sample, ch_sample = [[None] * args.nr_gpu for i in range(6)]
 
 if args.global_conditional:
     gh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size, args.global_latent_dim))

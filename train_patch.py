@@ -145,9 +145,9 @@ if args.use_coordinates:
     shape_2 = obs_shape[0]//2, obs_shape[1]//2, 2
     shape_4 = obs_shape[0]//4, obs_shape[1]//4, 2
 
-    ch_1_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_1 )
-    ch_2_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_2 )
-    ch_4_init = tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_4 )
+    ch_1_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + shape_1 )
+    ch_2_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + shape_2 )
+    ch_4_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + shape_4 )
     ch_init = [ch_1_init, ch_2_init, ch_4_init]
 
     ch_1 = [tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_1 ) for i in range(args.nr_gpu)]
@@ -240,6 +240,8 @@ def sample_from_model(sess, data=None, **params):
         xg = np.concatenate([x, g], axis=-1)
         xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
         x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
+    else:
+        x, _ = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
 
     # global conditioning
     if args.global_conditional:
@@ -309,6 +311,8 @@ def make_feed_dict(data, init=False, **params):
         xg = np.concatenate([x, g], axis=-1)
         xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
         x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
+    else:
+        x, _ = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
 
     # global conditioning
     if args.global_conditional:

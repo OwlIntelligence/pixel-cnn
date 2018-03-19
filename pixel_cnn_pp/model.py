@@ -43,7 +43,7 @@ def model_spec(x, gh=None, sh=None, ch=None, init=False, ema=None, dropout_p=0.5
         # else:
         #     sh_2, sh_4 = None, None
 
-        if spatial_conditional and sh is not None:
+        if spatial_conditional:
             with arg_scope([nn.conv2d], nonlinearity=resnet_nonlinearity):
                 sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='SAME')
                 sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='SAME')

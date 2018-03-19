@@ -38,6 +38,8 @@ def tile_images(imgs, size=(6, 6)):
 def random_crop_images(inputs, output_size):
     bsize, input_h, input_w = inputs.shape[:3]
     output_h, output_w = output_size
+    if input_h==output_h and input_w==output_w:
+        return inputs, None
     x = []
     y = []
     for i in range(bsize):

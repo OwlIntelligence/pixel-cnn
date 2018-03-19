@@ -95,6 +95,26 @@ configs['celeba128'] = {
     "nr_gpu": 4,
 }
 
+configs['celeba64'] = {
+    "data_dir": "/data/ziz/not-backed-up/jxu/CelebA",
+    "save_dir": "/data/ziz/jxu/models/celeba128-patch-4",
+    "nr_filters": 100,
+    "nr_resnet": 4,
+    "data_set": "celeba64",
+    "batch_size": 8,
+    "init_batch_size": 8,
+    "spatial_conditional": True,
+    'global_conditional': False,
+    "save_interval": 5,
+    "map_sampling": False,
+    "nr_gpu": 4,
+    'context_conditioning': True,
+    'use_coordinates': False,
+    "input_size": 32,
+    #"global_latent_dim": 640, #100,
+    "spatial_latent_num_channel": 4,
+}
+
 configs['celeba128-patch'] = {
     "data_dir": "/data/ziz/not-backed-up/jxu/CelebA",
     "save_dir": "/data/ziz/jxu/models/celeba128-patch-4",

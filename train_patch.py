@@ -222,8 +222,8 @@ bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*
 # mask generator
 train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
 #train_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
-test_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
-sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.875)
+test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.5)
+sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.5)
 
 def sample_from_model(sess, data=None, **params):
     if type(data) is tuple:
@@ -291,6 +291,7 @@ def sample_from_model(sess, data=None, **params):
     for yi in range(obs_shape[0]):
         for xi in range(obs_shape[1]):
             if 'mask_generator' not in params or ms[0][yi, xi]==0:
+                print(yi, xi)
                 feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
                 new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
                 for i in range(args.nr_gpu):
@@ -449,7 +450,7 @@ with tf.Session(config=config) as sess:
             zs = sess.run(vl.zs, feed_dict=feed_dict)
             sample_x = []
             for i in range(args.num_samples):
-                sample_x.append(sample_from_model(sess, data=d, mask_generator=test_mgen, z=np.concatenate(zs, axis=0))) ##
+                sample_x.append(sample_from_model(sess, data=d, mask_generator=sample_mgen, z=np.concatenate(zs, axis=0))) ##
             sample_x = np.concatenate(sample_x,axis=0)
             img_tile = plotting.img_tile(sample_x[:100], aspect_ratio=1.0, border_color=1.0, stretch=True)
             img = plotting.plot_img(img_tile, title=args.data_set + ' samples')

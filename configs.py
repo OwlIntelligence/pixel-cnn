@@ -31,6 +31,8 @@ def config_args(args, config):
         args.global_latent_dim = config['global_latent_dim']
     if "spatial_latent_num_channel" in config:
         args.spatial_latent_num_channel = config['spatial_latent_num_channel']
+    if 'use_coordinates' in config:
+        args.use_coordinates = config['use_coordinates']
 
 
 

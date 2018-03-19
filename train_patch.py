@@ -283,15 +283,18 @@ def sample_from_model(sess, data=None, **params):
         spatial_lv = np.split(spatial_lv, args.nr_gpu)
         feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
 
-    x = np.split(x, args.nr_gpu)
-    x_gen = [np.zeros_like(x[0]) for i in range(args.nr_gpu)]
+    if 'mask_generator' in params:
+        x_gen = np.split(x_masked[:,:,:,:3], args.nr_gpu)
+    else:
+        x_gen = [np.zeros_like(x) for i in range(args.nr_gpu)]
 
     for yi in range(obs_shape[0]):
         for xi in range(obs_shape[1]):
-            feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
-            new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
-            for i in range(args.nr_gpu):
-                x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
+            if 'mask_generator' not in params or ms[0][yi, xi]==0:
+                feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
+                new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
+                for i in range(args.nr_gpu):
+                    x_gen[i][:,yi,xi,:] = new_x_gen_np[i][:,yi,xi,:]
     return np.concatenate(x_gen, axis=0)
 
 

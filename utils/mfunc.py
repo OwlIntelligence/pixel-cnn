@@ -52,12 +52,6 @@ def random_crop_images(inputs, output_size):
     y = np.array(y)
     return x, y
 
-def generate_indices(coor, batch_size, num_channel):
-    h0, h1, w0, w1 = coor
-    indices = np.zeros((batch_size, h1-h0, w1-w0, num_channel, 4))
-    
-
-
 
 
 def tile_crop_images(input, output_size):

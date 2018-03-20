@@ -80,7 +80,7 @@ elif args.nr_gpu == 2:
 elif args.nr_gpu == 3:
     os.environ['CUDA_VISIBLE_DEVICES'] = '5,6,7'
 elif args.nr_gpu == 4:
-    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'#'4,5,6,7'
 
 # -----------------------------------------------------------------------------
 # fix random seed for reproducibility

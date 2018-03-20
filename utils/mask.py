@@ -62,11 +62,12 @@ class CenterEllipseMaskGenerator(MaskGenerator):
 
 class RandomRectangleMaskGenerator(MaskGenerator):
 
-    def __init__(self, height, width, min_ratio=0.25, max_ratio=0.75, margin_ratio=0.):
+    def __init__(self, height, width, min_ratio=0.25, max_ratio=0.75, margin_ratio=0., batch_same=False):
         super().__init__(height, width)
         self.min_ratio = min_ratio
         self.max_ratio = max_ratio
         self.margin_ratio = margin_ratio
+        self.batch_same = batch_same
 
     def gen(self, n):
         self.masks = np.ones((n, self.height, self.width))
@@ -83,6 +84,8 @@ class RandomRectangleMaskGenerator(MaskGenerator):
             height_offset = rng.randint(low=margin_height, high=self.height-margin_height-c_height)
             width_offset = rng.randint(low=margin_width, high=self.width-margin_width-c_width)
             self.masks[i, height_offset:height_offset+c_height, width_offset:width_offset+c_width] = 0
+        if self.batch_same:
+            self.masks = np.stack([self.masks[i].copy() for i in range(n)], axis=0)
         return self.masks
 
 # class RandomShapeMaskGenerator(MaskGenerator):

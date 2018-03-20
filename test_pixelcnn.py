@@ -483,7 +483,7 @@ with tf.Session(config=config) as sess:
     feed_dict = vl.make_feed_dict(d)
     zs = sess.run(vl.zs, feed_dict=feed_dict)
     sample_x = []
-    mask = um.CenterMaskGenerator(128,128,0.25).gen(1)[0]
+    mask = um.CenterMaskGenerator(128,128,24./64).gen(1)[0]
     # mask = um.RectangleMaskGenerator(128, 128, (96, 128-24, 128, 24)).gen(1)[0]
     for i in range(args.num_samples):
         completed = complete(sess, data=d, mask=mask, z=np.concatenate(zs, axis=0))

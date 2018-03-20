@@ -83,7 +83,8 @@ def find_next_missing_pixel(mask):
 def find_maximally_conditioned_window(mask, window_size, pixel):
     height, width = mask.shape
     h, w = pixel
-    h0, w0 = h-window_size+1, w-window_size//2
+    # h0, w0 = h-window_size+1, w-window_size//2
+    h0, w0 = h-window_size//2, w-window_size//2
     h0, w0 = min(max(h0, 0), height-window_size), min(max(w0, 0), width-window_size)
     return [[h0, h0+window_size], [w0, w0+window_size]]
 

@@ -447,7 +447,8 @@ def complete(sess, data, mask, **params):
         new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
         for i in range(args.nr_gpu):
             pixel = new_x_gen_np[i][0,yi,xi,:]
-            print(pixel*127.5+127.5)
+            print(pixel)
+            quit()
             x_ret[i][:,p[0],p[1],:] = new_x_gen_np[i][:,yi,xi,:]
 
         mask[p[0], p[1]] = 1

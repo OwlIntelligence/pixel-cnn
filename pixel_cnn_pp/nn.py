@@ -52,7 +52,7 @@ def discretized_mix_logistic_loss(x,l,sum_all=True, masks=None):
     logit_probs = l[:,:,:,:nr_mix]
     l = tf.reshape(l[:,:,:,nr_mix:], xs + [nr_mix*3])
     means = l[:,:,:,:,:nr_mix]
-    log_scales = tf.maximum(l[:,:,:,:,nr_mix:2*nr_mix], -7.) 
+    log_scales = tf.maximum(l[:,:,:,:,nr_mix:2*nr_mix], -7.)
     coeffs = tf.nn.tanh(l[:,:,:,:,2*nr_mix:3*nr_mix])
 
     x = tf.reshape(x, xs + [1]) + tf.zeros(xs + [nr_mix]) # here and below: getting the means and adjusting them based on preceding sub-pixels
@@ -343,6 +343,18 @@ def latent_deconv_net(h, scale_factor=1, nonlinearity=concat_elu, conv=deconv2d,
     if scale_factor >= 4:
         h = conv(h, int_shape(h)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
     return h
+
+@add_arg_scope
+def deconv_net(z, z_shape=[8,8,10]):
+    with tf.variable_scope("deconv_net"):
+        net = tf.reshape(z, [-1,]+z_shape])
+
+        net = conv2d(net, 512, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=tf.nn.elu)
+        net = conv2d(net, 256, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=tf.nn.elu)
+        net = conv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=tf.nn.elu)
+        net = conv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=tf.nn.elu)
+
+        return net
 
 
 ''' utilities for shifting the image around, efficient alternative to masking convolutions '''

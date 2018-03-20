@@ -128,8 +128,8 @@ else:
 # data place holders
 x_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,) + obs_shape)
 xs = [tf.placeholder(tf.float32, shape=(args.batch_size, ) + obs_shape) for i in range(args.nr_gpu)]
-gh_init, sh_init, ch_init = None, None, None
-ghs, shs, chs, gh_sample, sh_sample, ch_sample = [[None] * args.nr_gpu for i in range(6)]
+gh_init, sh_init, ch_init, zh_init = None, None, None, None
+ghs, shs, chs, zhs, gh_sample, sh_sample, ch_sample, zh_sample = [[None] * args.nr_gpu for i in range(8)]
 
 if args.global_conditional:
     gh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size, args.global_latent_dim))
@@ -155,6 +155,10 @@ if args.use_coordinates:
     ch_4 = [tf.placeholder(tf.float32, shape=(args.batch_size,) + shape_4 ) for i in range(args.nr_gpu)]
     chs = [[ch_1[i], ch_2[i], ch_4[i]] for i in range(args.nr_gpu)]
     ch_sample = chs
+if args.deconv_z:
+    zh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,)+(8,8,10))
+    zhs = [tf.placeholder(tf.float32, shape=(args.batch_size, (8,8,10))) for i in range(args.nr_gpu)]
+    zh_sample = zhs
 
 
 
@@ -163,7 +167,7 @@ model_opt = { 'nr_resnet': args.nr_resnet, 'nr_filters': args.nr_filters, 'nr_lo
 model = tf.make_template('model', model_spec)
 
 # run once for data dependent initialization of parameters
-init_pass = model(x_init, gh_init, sh_init, ch_init, init=True, dropout_p=args.dropout_p, **model_opt)
+init_pass = model(x_init, gh_init, sh_init, ch_init, zh_init, init=True, dropout_p=args.dropout_p, **model_opt)
 
 # keep track of moving average
 all_params = tf.trainable_variables()
@@ -179,7 +183,7 @@ new_x_gen = []
 for i in range(args.nr_gpu):
     with tf.device('/gpu:%d' % i):
         # train
-        out = model(xs[i], ghs[i], shs[i], chs[i], ema=None, dropout_p=args.dropout_p, **model_opt)
+        out = model(xs[i], ghs[i], shs[i], chs[i], zhs[i], ema=None, dropout_p=args.dropout_p, **model_opt)
         mask_tf = None
         if args.context_conditioning:
             mask_tf = shs[i][:, :, :, -1]
@@ -189,11 +193,11 @@ for i in range(args.nr_gpu):
         grads.append(tf.gradients(loss_gen[i], all_params, colocate_gradients_with_ops=True))
 
         # test
-        out = model(xs[i], ghs[i], shs[i], chs[i], ema=ema, dropout_p=0., **model_opt)
+        out = model(xs[i], ghs[i], shs[i], chs[i], zhs[i], ema=ema, dropout_p=0., **model_opt)
         loss_gen_test.append(loss_fun(xs[i], out, masks=mask_tf))
 
         # sample
-        out = model(xs[i], gh_sample[i], sh_sample[i], ch_sample[i], ema=ema, dropout_p=0, **model_opt)
+        out = model(xs[i], gh_sample[i], sh_sample[i], ch_sample[i], zh_sample[i], ema=ema, dropout_p=0, **model_opt)
         if args.energy_distance:
             new_x_gen.append(out[0])
         else:
@@ -247,6 +251,10 @@ def sample_from_model(sess, data=None, **params):
         ms = mgen.gen(x.shape[0])
         x_masked = x * uf.broadcast_mask(ms, 3)
         x_masked = np.concatenate([x_masked, uf.broadcast_mask(ms, 1)], axis=-1)
+
+    if args.deconv_z:
+        z = np.split(params['z'], args.nr_gpu)
+        feed_dict.update({zhs[i]: z.reshape((z.shape[0],8,8,10)) for i in range(args.nr_gpu)})
 
     # global conditioning
     if args.global_conditional:
@@ -326,6 +334,10 @@ def make_feed_dict(data, init=False, **params):
         ms = mgen.gen(x.shape[0])
         x_masked = x * uf.broadcast_mask(ms, 3)
         x_masked = np.concatenate([x_masked, uf.broadcast_mask(ms, 1)], axis=-1)
+
+    if args.deconv_z:
+        z = np.split(params['z'], args.nr_gpu)
+        feed_dict.update({zhs[i]: z.reshape((z.shape[0],8,8,10)) for i in range(args.nr_gpu)})
 
     # global conditioning
     if args.global_conditional:

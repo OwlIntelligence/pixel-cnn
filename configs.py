@@ -33,6 +33,9 @@ def config_args(args, config):
         args.spatial_latent_num_channel = config['spatial_latent_num_channel']
     if 'use_coordinates' in config:
         args.use_coordinates = config['use_coordinates']
+    if 'deconv_z' in config:
+        args.deconv_z = config['deconv_z']
+
 
 
 
@@ -133,6 +136,27 @@ configs['celeba128-patch'] = {
     "input_size": 32,
     "global_latent_dim": 640, #100,
     "spatial_latent_num_channel": 4,
+}
+
+configs['celeba128-patch-deconv'] = {
+    "data_dir": "/data/ziz/not-backed-up/jxu/CelebA",
+    "save_dir": "/data/ziz/jxu/models/celeba128-patch-deconv",
+    "nr_filters": 100,
+    "nr_resnet": 4,
+    "data_set": "celeba128",
+    "batch_size": 16,
+    "init_batch_size": 16,
+    "spatial_conditional": True,
+    'global_conditional': False,
+    "save_interval": 5,
+    "map_sampling": False,
+    "nr_gpu": 4,
+    'context_conditioning': True,
+    'use_coordinates': False,
+    "input_size": 32,
+    #"global_latent_dim": 640, #100,
+    "spatial_latent_num_channel": 4,
+    "deconv_z": True,
 }
 
 # configs['celeba128-patch'] = {

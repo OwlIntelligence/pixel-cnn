@@ -387,9 +387,8 @@ def complete(sess, data, mask, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
     # mask images
-    masks = uf.broadcast_mask(mask, 3, x.shape[0])
-    x_ret = x * masks
-    x_masked = np.concatenate([x_ret, masks[:,:,:,0:1]], axis=-1)
+    x_ret = x * uf.broadcast_mask(mask, 3, x.shape[0])
+    x_masked = np.concatenate([x_ret, uf.broadcast_mask(mask, 1, x.shape[0])], axis=-1)
     x_ret = np.split(x_ret, args.nr_gpu)
 
     # global conditioning
@@ -425,6 +424,9 @@ def complete(sess, data, mask, **params):
             if args.context_conditioning:
                 spatial_lv.append(x_masked_w)
             spatial_lv = np.concatenate(spatial_lv, axis=-1)
+        if args.spatial_conditional:
+            spatial_lv = np.split(spatial_lv, args.nr_gpu)
+            feed_dict.update({shs[i]: spatial_lv[i] for i in range(args.nr_gpu)})
 
         # coordinates conditioning:
         if args.use_coordinates:
@@ -449,7 +451,7 @@ def complete(sess, data, mask, **params):
             x_ret[i][:,p[0],p[1],:] = new_x_gen_np[i][:,yi,xi,:]
 
         mask[p[0], p[1]] = 1
-        x_masked[:, p[0], p[1], -1] = 1
+        x_masked = np.concatenate([np.concatenate(x_ret, axis=0), uf.broadcast_mask(mask, 1, x.shape[0])], axis=-1)
 
     return np.concatenate(x_ret, axis=0)
 

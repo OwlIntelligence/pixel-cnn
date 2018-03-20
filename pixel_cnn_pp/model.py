@@ -7,7 +7,7 @@ import tensorflow as tf
 from tensorflow.contrib.framework.python.ops import arg_scope
 import pixel_cnn_pp.nn as nn
 
-def model_spec(x, gh=None, sh=None, ch=None, zh=None, indices, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_filters=160, nr_logistic_mix=10, resnet_nonlinearity='concat_elu', energy_distance=False, global_conditional=False, spatial_conditional=False):
+def model_spec(x, gh=None, sh=None, ch=None, zh=None, indices=None, init=False, ema=None, dropout_p=0.5, nr_resnet=5, nr_filters=160, nr_logistic_mix=10, resnet_nonlinearity='concat_elu', energy_distance=False, global_conditional=False, spatial_conditional=False):
     """
     We receive a Tensor x of shape (N,H,W,D1) (e.g. (12,32,32,3)) and produce
     a Tensor x_out of shape (N,H,W,D2) (e.g. (12,32,32,100)), where each fiber

@@ -275,7 +275,7 @@ def sample_from_model(sess, data=None, **params):
     if args.deconv_z:
         z = np.split(params['z'], args.nr_gpu)
         feed_dict.update({zhs[i]: z[i].reshape((z[i].shape[0],8,8,10)) for i in range(args.nr_gpu)})
-        feed_dict.update({indices[i]:np.array([[0,coor[0],coor[2],0], [args.batch_size, 32,32,64]], dtype=np.int32) for i in range(args.nr_gpu)})
+        feed_dict.update({indices[i]:np.array([[0,coor[0][0],coor[0][2],0], [args.batch_size, 32,32,64]], dtype=np.int32) for i in range(args.nr_gpu)})
 
     # coordinates conditioning:
     if args.use_coordinates:
@@ -365,7 +365,7 @@ def make_feed_dict(data, init=False, **params):
         feed_dict = {x_init: x}
         if args.deconv_z:
             feed_dict.update({zh_init: z.reshape((z.shape[0],8,8,10))})
-            feed_dict.update({indices_init:np.array([[0,coor[0],coor[2],0], [args.init_batch_size, 32,32,64]], dtype=np.int32)})
+            feed_dict.update({indices_init:np.array([[0,coor[0][0],coor[0][2],0], [args.init_batch_size, 32,32,64]], dtype=np.int32)})
         if args.global_conditional:
             feed_dict.update({gh_init: global_lv})
         if args.spatial_conditional:
@@ -384,7 +384,7 @@ def make_feed_dict(data, init=False, **params):
         if args.deconv_z:
             z = np.split(z, args.nr_gpu)
             feed_dict.update({zhs[i]: z[i].reshape((z[i].shape[0],8,8,10)) for i in range(args.nr_gpu)})
-            feed_dict.update({indices[i]:np.array([[0,coor[0],coor[2],0], [args.batch_size, 32,32,64]], dtype=np.int32) for i in range(args.nr_gpu)})
+            feed_dict.update({indices[i]:np.array([[0,coor[0][0],coor[0][2],0], [args.batch_size, 32,32,64]], dtype=np.int32) for i in range(args.nr_gpu)})
         if args.global_conditional:
             global_lv = np.split(global_lv, args.nr_gpu)
             feed_dict.update({ghs[i]: global_lv[i] for i in range(args.nr_gpu)})

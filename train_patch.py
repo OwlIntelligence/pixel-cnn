@@ -248,7 +248,7 @@ def sample_from_model(sess, data=None, **params):
         x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
     else:
         x, coor = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
-    coor = np.concatenate([coor[:, 0], coor[:, 2]], axis=-1)
+    coor = np.stack([coor[:, 0], coor[:, 2]], axis=-1)
 
     if 'mask_generator' in params:
         mgen = params['mask_generator']
@@ -341,7 +341,7 @@ def make_feed_dict(data, init=False, **params):
         x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
     else:
         x, coor = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
-    coor = np.concatenate([coor[:, 0], coor[:, 2]], axis=-1)
+    coor = np.stack([coor[:, 0][:, 0], coor[:, 2]], axis=-1)
 
     if 'mask_generator' in params:
         mgen = params['mask_generator']

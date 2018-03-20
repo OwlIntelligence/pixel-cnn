@@ -157,7 +157,7 @@ if args.use_coordinates:
     ch_sample = chs
 if args.deconv_z:
     zh_init = tf.placeholder(tf.float32, shape=(args.init_batch_size,)+(8,8,10))
-    zhs = [tf.placeholder(tf.float32, shape=(args.batch_size, (8,8,10))) for i in range(args.nr_gpu)]
+    zhs = [tf.placeholder(tf.float32, shape=(args.batch_size,)+(8,8,10)) for i in range(args.nr_gpu)]
     zh_sample = zhs
 
 

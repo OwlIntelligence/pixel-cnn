@@ -160,6 +160,8 @@ if args.deconv_z:
     zhs = [tf.placeholder(tf.float32, shape=(args.batch_size,)+(8,8,10)) for i in range(args.nr_gpu)]
     zh_sample = zhs
 
+    indices_init = tf.placeholder(tf.int32, shape=(args.init_batch_size,)+(8,8,10))
+
 
 
 # create the model
@@ -167,7 +169,7 @@ model_opt = { 'nr_resnet': args.nr_resnet, 'nr_filters': args.nr_filters, 'nr_lo
 model = tf.make_template('model', model_spec)
 
 # run once for data dependent initialization of parameters
-init_pass = model(x_init, gh_init, sh_init, ch_init, zh_init, init=True, dropout_p=args.dropout_p, **model_opt)
+init_pass = model(x_init, gh_init, sh_init, ch_init, zh_init, indices, init=True, dropout_p=args.dropout_p, **model_opt)
 
 # keep track of moving average
 all_params = tf.trainable_variables()
@@ -237,6 +239,7 @@ def sample_from_model(sess, data=None, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
+    feed_dict = {}
 
     if args.use_coordinates:
         g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
@@ -319,6 +322,8 @@ def make_feed_dict(data, init=False, **params):
         x = data
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
+
+    feed_dict = {}
 
     if 'z' in params:
         z = params['z']

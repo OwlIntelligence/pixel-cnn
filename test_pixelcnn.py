@@ -446,7 +446,6 @@ def complete(sess, data, mask, **params):
         feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
         new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
         for i in range(args.nr_gpu):
-            #pixel = new_x_gen_np[i][0,yi,xi,:]
             x_ret[i][:,p[0],p[1],:] = new_x_gen_np[i][:,yi,xi,:]
 
         mask[p[0], p[1]] = 1
@@ -486,7 +485,7 @@ with tf.Session(config=config) as sess:
     sample_x = []
     mask = um.CenterMaskGenerator(128,128,0.25).gen(1)[0]
     for i in range(args.num_samples):
-        completed = sample_from_model(sess, data=d, z=np.concatenate(zs, axis=0))#complete(sess, data=d, mask=mask, z=np.concatenate(zs, axis=0))
+        completed = complete(sess, data=d, mask=mask, z=np.concatenate(zs, axis=0))
         sample_x.append(completed)
     sample_x = np.concatenate(sample_x,axis=0)
 

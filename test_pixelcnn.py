@@ -201,7 +201,7 @@ for i in range(args.nr_gpu):
                 epsilon = 0.5 - 1e-5
             else:
                 epsilon = 1e-5
-            epsilon = 0.05
+            epsilon = 0.45
             new_x_gen.append(nn.sample_from_discretized_mix_logistic(out, args.nr_logistic_mix, epsilon=epsilon))
 
 # add losses and gradients together and get training updates
@@ -483,7 +483,8 @@ with tf.Session(config=config) as sess:
     feed_dict = vl.make_feed_dict(d)
     zs = sess.run(vl.zs, feed_dict=feed_dict)
     sample_x = []
-    mask = um.CenterMaskGenerator(128,128,0.25).gen(1)[0]
+    # mask = um.CenterMaskGenerator(128,128,0.25).gen(1)[0]
+    mask = um.RandomRectangleMaskGenerator(128, 128, (96, 128-24, 128, 24)).gen(1)[0]
     for i in range(args.num_samples):
         completed = complete(sess, data=d, mask=mask, z=np.concatenate(zs, axis=0))
         #completed = sample_from_model(sess, data=d, mask_generator=sample_mgen, z=np.concatenate(zs, axis=0))

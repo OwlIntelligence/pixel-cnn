@@ -299,9 +299,7 @@ def sample_from_model(sess, data=None, **params):
 
 
 
-# init & save
-initializer = tf.global_variables_initializer()
-saver = tf.train.Saver()
+
 
 
 def make_feed_dict(data, init=False, **params):
@@ -455,6 +453,10 @@ def complete(sess, data, mask, **params):
 
     return np.concatenate(x_ret, axis=0)
 
+# init & save
+initializer = tf.global_variables_initializer()
+saver = tf.train.Saver()
+
 
 # //////////// perform training //////////////
 if not os.path.exists(args.save_dir):
@@ -471,6 +473,10 @@ with tf.Session(config=config) as sess:
     vl.load_vae(sess, vl.saver)
 
     vl_mgen = um.RandomRectangleMaskGenerator(img_shape[0], img_shape[1], max_ratio=.5)
+
+    ckpt_file = args.save_dir + '/params_' + args.data_set + '.ckpt'
+    print('restoring parameters from', ckpt_file)
+    saver.restore(sess, ckpt_file)            
 
     d = next(test_data)
 

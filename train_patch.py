@@ -227,7 +227,7 @@ bits_per_dim = loss_gen[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch
 bits_per_dim_test = loss_gen_test[0]/(args.nr_gpu*np.log(2.)*np.prod(obs_shape)*args.batch_size)
 
 # mask generator
-train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], max_ratio=1.0)
+train_mgen = um.RandomRectangleMaskGenerator(obs_shape[0], obs_shape[1], min_ratio=0.5, max_ratio=1.0)
 #train_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1])
 test_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.75)
 sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 0.75)
@@ -255,7 +255,6 @@ def sample_from_model(sess, data=None, **params):
         ms = mgen.gen(x.shape[0])
         x_masked = x * uf.broadcast_mask(ms, 3)
         x_masked = np.concatenate([x_masked, uf.broadcast_mask(ms, 1)], axis=-1)
-
 
 
     # global conditioning

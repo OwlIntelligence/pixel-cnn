@@ -45,8 +45,8 @@ def model_spec(x, gh=None, sh=None, ch=None, zh=None, indices=None, init=False, 
 
         if spatial_conditional:
             with arg_scope([nn.conv2d], nonlinearity=resnet_nonlinearity):
-                sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='SAME')
-                sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='SAME')
+                #sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='SAME')
+                #sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='SAME')
                 if zh is not None:
                     zh = nn.deconv_net(zh)
                     zh = tf.stack([tf.slice(zh[k], begin=(indices[k][0], indices[k][1], 0), size=(32,32,64)) for k in range(16)])

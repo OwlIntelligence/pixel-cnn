@@ -388,9 +388,9 @@ def complete(sess, data, mask, **params):
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
     # mask images
     masks = uf.broadcast_mask(mask, 3, x.shape[0])
-    x *= masks
-
-    x_ret = np.split(x.copy(), args.nr_gpu)
+    x_ret = x * masks
+    x_masked = np.concatenate([x_ret, masks[:,:,:,0:1]], axis=-1)
+    x_ret = np.split(x_ret, args.nr_gpu)
 
     # global conditioning
     if args.global_conditional:
@@ -414,11 +414,8 @@ def complete(sess, data, mask, **params):
         print(p, window)
         [[h0, h1], [w0, w1]] = window
         g = global_g[:, h0:h1, w0:w1, :]
-        mw = uf.broadcast_mask(mask[h0:h1, w0:w1], batch_size=x.shape[0])
-        xw = x[:, h0:h1, w0:w1, :]
 
-        x_masked = x * uf.broadcast_mask(mw, 3)
-        x_masked = np.concatenate([x_masked, uf.broadcast_mask(mw, 1)], axis=-1)
+        x_masked_w = x_masked[:, h0:h1, w0:w1, :]
 
         yi, xi = p[0]-h0, p[1]-w0
 
@@ -426,7 +423,7 @@ def complete(sess, data, mask, **params):
         if args.spatial_conditional:
             spatial_lv = []
             if args.context_conditioning:
-                spatial_lv.append(x_masked)
+                spatial_lv.append(x_masked_w)
             spatial_lv = np.concatenate(spatial_lv, axis=-1)
 
         # coordinates conditioning:
@@ -444,8 +441,7 @@ def complete(sess, data, mask, **params):
             feed_dict.update({ch_4[i]: c4[i] for i in range(args.nr_gpu)})
 
 
-        #x_gen = np.split(xw, args.nr_gpu)
-        x_gen = [x_ret[i][:, h0:h1, w0:w1, :].copy() for i in range(args.nr_gpu)]
+        x_gen = [x_ret[i][:,h0:h1,w0:w1,:] for i in range(args.nr_gpu)]
 
         feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
         new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
@@ -453,6 +449,7 @@ def complete(sess, data, mask, **params):
             x_ret[i][:,p[0],p[1],:] = new_x_gen_np[i][:,yi,xi,:]
 
         mask[p[0], p[1]] = 1
+        x_masked[:, p[0], p[1], -1] = 1
 
     return np.concatenate(x_ret, axis=0)
 

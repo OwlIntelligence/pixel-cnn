@@ -160,7 +160,7 @@ if args.deconv_z:
     zhs = [tf.placeholder(tf.float32, shape=(args.batch_size,)+(8,8,10)) for i in range(args.nr_gpu)]
     zh_sample = zhs
 
-    indices_init = tf.placeholder(tf.int32, shape=(args.init_batch_size,)+(8,8,10))
+    #indices_init = tf.placeholder(tf.int32, shape=(args.init_batch_size,)+(8,8,10))
 
 
 
@@ -169,7 +169,7 @@ model_opt = { 'nr_resnet': args.nr_resnet, 'nr_filters': args.nr_filters, 'nr_lo
 model = tf.make_template('model', model_spec)
 
 # run once for data dependent initialization of parameters
-init_pass = model(x_init, gh_init, sh_init, ch_init, zh_init, indices, init=True, dropout_p=args.dropout_p, **model_opt)
+init_pass = model(x_init, gh_init, sh_init, ch_init, zh_init, init=True, dropout_p=args.dropout_p, **model_opt)
 
 # keep track of moving average
 all_params = tf.trainable_variables()

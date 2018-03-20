@@ -320,7 +320,7 @@ def make_feed_dict(data, init=False, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
-    if z in params:
+    if 'z' in params:
         z = params['z']
 
     if args.use_coordinates:

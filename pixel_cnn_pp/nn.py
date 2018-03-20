@@ -351,8 +351,8 @@ def deconv_net(z):
         net = z
         net = deconv2d(net, 512, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=concat_elu)
         net = deconv2d(net, 256, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=concat_elu)
-        net = deconv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=concat_elu)
-        net = deconv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=concat_elu)
+        #net = deconv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=concat_elu)
+        #net = deconv2d(net, 64, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=concat_elu)
 
         return net
 

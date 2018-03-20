@@ -320,26 +320,28 @@ def make_feed_dict(data, init=False, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
+    if z in params:
+        z = params['z']
 
     if args.use_coordinates:
         g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
         xg = np.concatenate([x, g], axis=-1)
-        xg, _ = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
+        xg, coor = uf.random_crop_images(xg, output_size=(args.input_size, args.input_size))
         x, g = xg[:, :, :, :3], xg[:, :, :, 3:]
     else:
-        x, _ = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
+        x, coor = uf.random_crop_images(x, output_size=(args.input_size, args.input_size))
 
     if 'mask_generator' in params:
         mgen = params['mask_generator']
         ms = mgen.gen(x.shape[0])
         x_masked = x * uf.broadcast_mask(ms, 3)
         x_masked = np.concatenate([x_masked, uf.broadcast_mask(ms, 1)], axis=-1)
-    if init:
-        z = params['z']
-        feed_dict.update({zh_init: z.reshape((z.shape[0],8,8,10))})
-    else:
-        if args.deconv_z:
-            z = np.split(params['z'], args.nr_gpu)
+
+    if args.deconv_z:
+        if init:
+            feed_dict.update({zh_init: z.reshape((z.shape[0],8,8,10))})
+        else:
+            z = np.split(z, args.nr_gpu)
             feed_dict.update({zhs[i]: z[i].reshape((z[i].shape[0],8,8,10)) for i in range(args.nr_gpu)})
 
     # global conditioning

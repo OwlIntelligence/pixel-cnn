@@ -396,11 +396,11 @@ def complete(sess, data, mask, **params):
             global_lv.append(params['z'])
         global_lv = np.concatenate(global_lv, axis=-1)
 
-    global_g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
-
     if args.global_conditional:
         global_lv = np.split(global_lv, args.nr_gpu)
         feed_dict.update({ghs[i]: global_lv[i] for i in range(args.nr_gpu)})
+
+    global_g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
 
     while True:
         # find the next pixel and the corresonding window
@@ -446,6 +446,8 @@ def complete(sess, data, mask, **params):
         feed_dict.update({xs[i]: x_gen[i] for i in range(args.nr_gpu)})
         new_x_gen_np = sess.run(new_x_gen, feed_dict=feed_dict)
         for i in range(args.nr_gpu):
+            pixel = new_x_gen_np[i][0,yi,xi,:]
+            print(pixel*127.5+127.5)
             x_ret[i][:,p[0],p[1],:] = new_x_gen_np[i][:,yi,xi,:]
 
         mask[p[0], p[1]] = 1
@@ -476,7 +478,7 @@ with tf.Session(config=config) as sess:
 
     ckpt_file = args.save_dir + '/params_' + args.data_set + '.ckpt'
     print('restoring parameters from', ckpt_file)
-    saver.restore(sess, ckpt_file)            
+    saver.restore(sess, ckpt_file)
 
     d = next(test_data)
 

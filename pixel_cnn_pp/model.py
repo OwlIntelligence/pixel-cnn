@@ -49,7 +49,7 @@ def model_spec(x, gh=None, sh=None, ch=None, zh=None, indices=None, init=False, 
                 sh = nn.conv2d(sh, 2*nr_filters, filter_size=[3,3], stride=[1,1], pad='SAME')
                 if zh is not None:
                     zh = nn.deconv_net(zh)
-                    zh = tf.slice(zh, begin=indices[0], size=indices[1])
+                    zh = tf.slice(zh, begin=indices[0], size=(16, 32,32,64))
                     sh = tf.concat([zh, sh], axis=-1)
                 sh_2 = nn.conv2d(sh, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
                 sh_4 = nn.conv2d(sh_2, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')

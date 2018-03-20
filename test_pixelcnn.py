@@ -449,7 +449,7 @@ def complete(sess, data, mask, **params):
             x_ret[i][:,p[0],p[1],:] = new_x_gen_np[i][:,yi,xi,:]
 
         mask[p[0], p[1]] = 1
-        x_masked = np.concatenate([np.concatenate(x_ret, axis=0), uf.broadcast_mask(mask, 1, x.shape[0])], axis=-1)
+        #x_masked = np.concatenate([np.concatenate(x_ret, axis=0), uf.broadcast_mask(mask, 1, x.shape[0])], axis=-1)
 
     return np.concatenate(x_ret, axis=0)
 
@@ -483,8 +483,8 @@ with tf.Session(config=config) as sess:
     feed_dict = vl.make_feed_dict(d)
     zs = sess.run(vl.zs, feed_dict=feed_dict)
     sample_x = []
-    # mask = um.CenterMaskGenerator(128,128,0.25).gen(1)[0]
-    mask = um.RectangleMaskGenerator(128, 128, (96, 128-24, 128, 24)).gen(1)[0]
+    mask = um.CenterMaskGenerator(128,128,0.25).gen(1)[0]
+    # mask = um.RectangleMaskGenerator(128, 128, (96, 128-24, 128, 24)).gen(1)[0]
     for i in range(args.num_samples):
         completed = complete(sess, data=d, mask=mask, z=np.concatenate(zs, axis=0))
         #completed = sample_from_model(sess, data=d, mask_generator=sample_mgen, z=np.concatenate(zs, axis=0))

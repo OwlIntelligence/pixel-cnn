@@ -269,11 +269,11 @@ def sample_from_model(sess, data=None, **params):
         if args.context_conditioning:
             spatial_lv.append(x_masked)
         spatial_lv = np.concatenate(spatial_lv, axis=-1)
-        
+
     feed_dict = {}
     if args.deconv_z:
         z = np.split(params['z'], args.nr_gpu)
-        feed_dict.update({zhs[i]: z.reshape((z.shape[0],8,8,10)) for i in range(args.nr_gpu)})
+        feed_dict.update({zhs[i]: z[i].reshape((z[i].shape[0],8,8,10)) for i in range(args.nr_gpu)})
 
     # coordinates conditioning:
     if args.use_coordinates:

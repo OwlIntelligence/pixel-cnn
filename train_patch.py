@@ -334,10 +334,13 @@ def make_feed_dict(data, init=False, **params):
         ms = mgen.gen(x.shape[0])
         x_masked = x * uf.broadcast_mask(ms, 3)
         x_masked = np.concatenate([x_masked, uf.broadcast_mask(ms, 1)], axis=-1)
-
-    if args.deconv_z:
-        z = np.split(params['z'], args.nr_gpu)
-        feed_dict.update({zhs[i]: z.reshape((z.shape[0],8,8,10)) for i in range(args.nr_gpu)})
+    if init:
+        z = params['z']
+        feed_dict.update({zh_init: z.reshape((z.shape[0],8,8,10))})
+    else:
+        if args.deconv_z:
+            z = np.split(params['z'], args.nr_gpu)
+            feed_dict.update({zhs[i]: z[i].reshape((z[i].shape[0],8,8,10)) for i in range(args.nr_gpu)})
 
     # global conditioning
     if args.global_conditional:

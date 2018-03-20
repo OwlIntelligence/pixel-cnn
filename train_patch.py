@@ -239,7 +239,6 @@ def sample_from_model(sess, data=None, **params):
         y = None
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
 
-    feed_dict = {}
 
     if args.use_coordinates:
         g = grid.generate_grid((x.shape[1], x.shape[2]), batch_size=x.shape[0])
@@ -255,9 +254,7 @@ def sample_from_model(sess, data=None, **params):
         x_masked = x * uf.broadcast_mask(ms, 3)
         x_masked = np.concatenate([x_masked, uf.broadcast_mask(ms, 1)], axis=-1)
 
-    if args.deconv_z:
-        z = np.split(params['z'], args.nr_gpu)
-        feed_dict.update({zhs[i]: z.reshape((z.shape[0],8,8,10)) for i in range(args.nr_gpu)})
+
 
     # global conditioning
     if args.global_conditional:
@@ -272,6 +269,11 @@ def sample_from_model(sess, data=None, **params):
         if args.context_conditioning:
             spatial_lv.append(x_masked)
         spatial_lv = np.concatenate(spatial_lv, axis=-1)
+        
+    feed_dict = {}
+    if args.deconv_z:
+        z = np.split(params['z'], args.nr_gpu)
+        feed_dict.update({zhs[i]: z.reshape((z.shape[0],8,8,10)) for i in range(args.nr_gpu)})
 
     # coordinates conditioning:
     if args.use_coordinates:
@@ -342,13 +344,6 @@ def make_feed_dict(data, init=False, **params):
         x_masked = x * uf.broadcast_mask(ms, 3)
         x_masked = np.concatenate([x_masked, uf.broadcast_mask(ms, 1)], axis=-1)
 
-    if args.deconv_z:
-        if init:
-            feed_dict.update({zh_init: z.reshape((z.shape[0],8,8,10))})
-        else:
-            z = np.split(z, args.nr_gpu)
-            feed_dict.update({zhs[i]: z[i].reshape((z[i].shape[0],8,8,10)) for i in range(args.nr_gpu)})
-
     # global conditioning
     if args.global_conditional:
         global_lv = []
@@ -366,6 +361,8 @@ def make_feed_dict(data, init=False, **params):
 
     if init:
         feed_dict = {x_init: x}
+        if args.deconv_z:
+            feed_dict.update({zh_init: z.reshape((z.shape[0],8,8,10))})
         if args.global_conditional:
             feed_dict.update({gh_init: global_lv})
         if args.spatial_conditional:
@@ -381,6 +378,9 @@ def make_feed_dict(data, init=False, **params):
     else:
         x = np.split(x, args.nr_gpu)
         feed_dict = {xs[i]: x[i] for i in range(args.nr_gpu)}
+        if args.deconv_z:
+            z = np.split(z, args.nr_gpu)
+            feed_dict.update({zhs[i]: z[i].reshape((z[i].shape[0],8,8,10)) for i in range(args.nr_gpu)})
         if args.global_conditional:
             global_lv = np.split(global_lv, args.nr_gpu)
             feed_dict.update({ghs[i]: global_lv[i] for i in range(args.nr_gpu)})

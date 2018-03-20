@@ -50,7 +50,7 @@ def model_spec(x, gh=None, sh=None, ch=None, zh=None, indices=None, init=False, 
                 if zh is not None:
                     zh = nn.deconv_net(zh)
                     # zh = tf.stack([tf.slice(zh[k], begin=(indices[k][0], indices[k][1], 0), size=(32,32,64)) for k in range(16)])
-                    zh = tf.slice(zh, begin=(0, indices[0][0], indices[0][1], 0), size=(16,32,32,64))
+                    zh = tf.slice(zh, begin=(0, indices[0][0], indices[0][1], 0), size=(4,32,32,64))
                     sh = tf.concat([zh, sh], axis=-1)
                 sh_2 = nn.conv2d(sh, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')
                 sh_4 = nn.conv2d(sh_2, nn.int_shape(sh)[-1], filter_size=[3,3], stride=[2,2], pad='SAME')

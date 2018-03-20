@@ -386,8 +386,8 @@ def complete(sess, data, mask, **params):
     x = np.cast[np.float32]((x - 127.5) / 127.5) ## preprocessing
     # mask images
     x_ret = x * uf.broadcast_mask(mask, 3, x.shape[0])
-    x_masked = np.concatenate([x_ret, uf.broadcast_mask(mask, 1, x.shape[0])], axis=-1)
     x_ret = np.split(x_ret, args.nr_gpu)
+    x_masked = np.concatenate([np.concatenate(x_ret, axis=0), uf.broadcast_mask(mask, 1, x.shape[0])], axis=-1)
 
     # global conditioning
     if args.global_conditional:
@@ -485,8 +485,8 @@ with tf.Session(config=config) as sess:
     sample_x = []
     mask = um.CenterMaskGenerator(128,128,0.25).gen(1)[0]
     for i in range(args.num_samples):
-        #completed = complete(sess, data=d, mask=mask, z=np.concatenate(zs, axis=0))
-        completed = sample_from_model(sess, data=d, mask_generator=sample_mgen, z=np.concatenate(zs, axis=0))
+        completed = complete(sess, data=d, mask=mask, z=np.concatenate(zs, axis=0))
+        #completed = sample_from_model(sess, data=d, mask_generator=sample_mgen, z=np.concatenate(zs, axis=0))
         sample_x.append(completed)
     sample_x = np.concatenate(sample_x,axis=0)
 

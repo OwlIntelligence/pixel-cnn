@@ -480,7 +480,7 @@ with tf.Session(config=config) as sess:
     sample_x = []
     mask = sample_mgen.gen(1)[0]
     for i in range(args.num_samples):
-        completed = complete(sess, data=d, mask, z=np.concatenate(zs, axis=0))
+        completed = complete(sess, data=d, mask=mask, z=np.concatenate(zs, axis=0))
         sample_x.append(completed)
     sample_x = np.concatenate(sample_x,axis=0)
 

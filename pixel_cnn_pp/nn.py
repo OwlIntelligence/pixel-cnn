@@ -348,7 +348,7 @@ def latent_deconv_net(h, scale_factor=1, nonlinearity=concat_elu, conv=deconv2d,
 def deconv_net(z):
     with tf.variable_scope("deconv_net"):
         #net = tf.reshape(z, [-1]+z_shape)
-
+        net = z
         net = conv2d(net, 512, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=tf.nn.elu)
         net = conv2d(net, 256, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=tf.nn.elu)
         net = conv2d(net, 128, filter_size=[5,5], stride=[2,2], pad='SAME', nonlinearity=tf.nn.elu)

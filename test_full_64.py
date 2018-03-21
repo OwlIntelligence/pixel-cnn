@@ -410,6 +410,12 @@ with tf.Session(config=config) as sess:
         sample_x.append(sample_from_model(sess, data=d, mask_generator=sample_mgen))
     sample_x = np.concatenate(sample_x,axis=0)
 
+    for i in range(sample_x.shape[0]):
+        ms = sample_mgen.gen(1)[0]
+        contour = 1-uf.find_contour(ms)[:, :, None]
+        contour[contour<1] = 0.8
+        sample_x[i] *= contour
+
     sample_x = np.rint(sample_x * 127.5 + 127.5)
     from PIL import Image
     img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(10,10)), 'RGB')

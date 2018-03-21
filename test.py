@@ -32,6 +32,8 @@ with tf.Session(config=config) as sess:
 
 
     feed_dict = v.make_feed_dict(data, test_mgen)
+    print(v.xs)
+    print(v.mxs)
     ret = sess.run([v.mxs, v.x_hats], feed_dict=feed_dict)
     mx, x_hat = ret[:len(ret)//2], ret[len(ret)//2:]
     mx, x_hat = np.concatenate(mx, axis=0), np.concatenate(x_hat, axis=0)

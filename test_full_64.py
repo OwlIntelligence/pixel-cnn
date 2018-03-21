@@ -404,11 +404,30 @@ with tf.Session(config=config) as sess:
     saver.restore(sess, ckpt_file)
 
     d = next(test_data)
+
+    #
+    for i in range(args.num_samples):
+        d = next(test_data)
+        sample_x.append(d)
+    sample_x = np.concatenate(sample_x,axis=0)
+
+    sample_x = np.rint(sample_x)
+    from PIL import Image
+    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(10,10)), 'RGB')
+    img.save(os.path.join("plots", '%s_ground_truth_%s.png' % (args.data_set, "test")))
+    quit()
+    #
+
+
+
+
     sample_x = []
     for i in range(args.num_samples):
         d = next(test_data)
         sample_x.append(sample_from_model(sess, data=d, mask_generator=sample_mgen))
     sample_x = np.concatenate(sample_x,axis=0)
+
+    sample_x = sample_x * 127.5 + 127.5
 
     for i in range(sample_x.shape[0]):
         ms = sample_mgen.gen(1)[0]
@@ -416,7 +435,7 @@ with tf.Session(config=config) as sess:
         contour[contour<1] = 0.8
         sample_x[i] *= contour
 
-    sample_x = np.rint(sample_x * 127.5 + 127.5)
+    sample_x = np.rint(sample_x)
     from PIL import Image
     img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(10,10)), 'RGB')
     img.save(os.path.join("plots", '%s_complete_%s.png' % (args.data_set, "test")))

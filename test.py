@@ -40,7 +40,7 @@ with tf.Session(config=config) as sess:
 
     from PIL import Image
     img = Image.fromarray(uf.tile_images(mx.astype(np.uint8), size=(4,4)), 'RGB')
-    img.save(os.path.join("plots", '%s_vae_ori_%s.png' % (args.data_set, "test")))
+    img.save(os.path.join("plots", '%s_vae_ori_%s.png' % ('celeba64', "test")))
 
-    img = Image.fromarray(uf.tile_images(mx.astype(np.uint8), size=(4,4)), 'RGB')
-    img.save(os.path.join("plots", '%s_vae_recon_%s.png' % (args.data_set, "test")))
+    img = Image.fromarray(uf.tile_images(x_hat.astype(np.uint8), size=(4,4)), 'RGB')
+    img.save(os.path.join("plots", '%s_vae_recon_%s.png' % ('celeba64', "test")))

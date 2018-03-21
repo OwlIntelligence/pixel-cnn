@@ -411,9 +411,21 @@ with tf.Session(config=config) as sess:
     sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 1.0)
 
     d = next(test_data)
+    d = next(test_data)
+
+    from PIL import Image
+    img = Image.fromarray(uf.tile_images(np.rint(d).astype(np.uint8), size=(5,5)), 'RGB')
+    img.save(os.path.join("plots", '%s_original_%s.png' % (args.data_set, "test")))
+
 
     feed_dict = vl.make_feed_dict(d)
-    zs = sess.run(vl.zs, feed_dict=feed_dict)
+    ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
+    zs, x_hats = ret[:len(ret)//2], ret[len(ret)//2:]
+    x_hats = np.concatenate(x_hats, axis=0)
+    x_hats *= 255.
+
+    img = Image.fromarray(uf.tile_images(np.rint(x_hats).astype(np.uint8), size=(5,5)), 'RGB')
+    img.save(os.path.join("plots", '%s_recon_%s.png' % (args.data_set, "test")))
 
     sample_x = []
     for i in range(args.num_samples):
@@ -424,6 +436,6 @@ with tf.Session(config=config) as sess:
     sample_x = sample_x * 127.5 + 127.5
 
     sample_x = np.rint(sample_x)
-    from PIL import Image
-    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(10,10)), 'RGB')
+
+    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(5,5)), 'RGB')
     img.save(os.path.join("plots", '%s_complete_%s.png' % (args.data_set, "test")))

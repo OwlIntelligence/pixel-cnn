@@ -13,7 +13,7 @@ import svae64_loading as v
 import utils.mfunc as uf
 
 
-test_data = celeba_data.DataLoader(v.FLAGS.data_dir, 'valid', v.FLAGS.batch_size*v.FLAGS.nr_gpu, shuffle=False, size=64)
+test_data = celeba_data.DataLoader(v.FLAGS.data_dir, 'test', v.FLAGS.batch_size*v.FLAGS.nr_gpu, shuffle=False, size=64)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -21,7 +21,7 @@ with tf.Session(config=config) as sess:
 
     v.load_vae(sess, v.saver)
 
-    test_mgen = m.RandomRectangleMaskGenerator(64, 64)
+    test_mgen = m.RandomRectangleMaskGenerator(64, 64, min_ratio=0.25, max_ratio=0.5)
 
     data = next(test_data)
     data = next(test_data)

@@ -406,6 +406,7 @@ with tf.Session(config=config) as sess:
     d = next(test_data)
 
     #
+    sample_x = []
     for i in range(args.num_samples):
         d = next(test_data)
         sample_x.append(d)

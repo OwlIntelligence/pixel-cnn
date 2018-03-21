@@ -417,11 +417,18 @@ with tf.Session(config=config) as sess:
     img.save(os.path.join("plots", '%s_original_%s.png' % (args.data_set, "test")))
 
 
-    feed_dict = vl.make_feed_dict(d)
-    ret = sess.run(vl.zs+vl.x_hats, feed_dict=feed_dict)
+    feed_dict = vl.make_feed_dict(d, vl_mgen)
+    ret = sess.run([vl.mxs]+vl.zs+vl.x_hats, feed_dict=feed_dict)
+    mxs = np.concatenate(ret[0], axis=0)
+    mxs *= 255.
+    ret = ret[1:]
     zs, x_hats = ret[:len(ret)//2], ret[len(ret)//2:]
     x_hats = np.concatenate(x_hats, axis=0)
     x_hats *= 255.
+
+
+    img = Image.fromarray(uf.tile_images(np.rint(mxs).astype(np.uint8), size=(5,5)), 'RGB')
+    img.save(os.path.join("plots", '%s_masked_%s.png' % (args.data_set, "test")))
 
     img = Image.fromarray(uf.tile_images(np.rint(x_hats).astype(np.uint8), size=(5,5)), 'RGB')
     img.save(os.path.join("plots", '%s_recon_%s.png' % (args.data_set, "test")))

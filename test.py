@@ -32,7 +32,7 @@ with tf.Session(config=config) as sess:
 
 
     feed_dict = v.make_feed_dict(data, test_mgen)
-    ret = sess.run([v.mxs, v.x_hats], feed_dict=feed_dict)
+    ret = sess.run([v.mxs]+v.x_hats, feed_dict=feed_dict)
     mx , x_hat = ret[0], ret[1:]
     mx, x_hat = np.concatenate(mx, axis=0), np.concatenate(x_hat, axis=0)
     mx = np.rint(mx*255.)

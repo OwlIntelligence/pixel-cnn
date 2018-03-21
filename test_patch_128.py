@@ -408,9 +408,8 @@ with tf.Session(config=config) as sess:
     print('restoring parameters from', ckpt_file)
     saver.restore(sess, ckpt_file)
 
-    sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 1.0)
+    sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], .0)
 
-    d = next(test_data)
     d = next(test_data)
 
     from PIL import Image

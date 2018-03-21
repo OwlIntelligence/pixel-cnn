@@ -408,6 +408,8 @@ with tf.Session(config=config) as sess:
     print('restoring parameters from', ckpt_file)
     saver.restore(sess, ckpt_file)
 
+    sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 1.0)
+
     d = next(test_data)
 
     feed_dict = vl.make_feed_dict(d)
@@ -416,7 +418,7 @@ with tf.Session(config=config) as sess:
     sample_x = []
     for i in range(args.num_samples):
         d = next(test_data)
-        sample_x.append(sample_from_model(sess, data=d, z=np.concatenate(zs, axis=0)))
+        sample_x.append(sample_from_model(sess, data=d, z=np.concatenate(zs, axis=0), mask_generator=sample_mgen))
     sample_x = np.concatenate(sample_x,axis=0)
 
     sample_x = sample_x * 127.5 + 127.5

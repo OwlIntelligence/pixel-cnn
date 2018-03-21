@@ -405,21 +405,21 @@ with tf.Session(config=config) as sess:
 
     d = next(test_data)
 
+    # #
+    # sample_x = []
+    # for i in range(args.num_samples):
+    #     d = next(test_data)
+    #     sample_x.append(d)
+    # sample_x = np.concatenate(sample_x,axis=0)
     #
-    sample_x = []
-    for i in range(args.num_samples):
-        d = next(test_data)
-        sample_x.append(d)
-    sample_x = np.concatenate(sample_x,axis=0)
-
-    sample_x = np.rint(sample_x)
-    from PIL import Image
-    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(10,10)), 'RGB')
-    img.save(os.path.join("plots", '%s_ground_truth_%s.png' % (args.data_set, "test")))
-    quit()
+    # sample_x = np.rint(sample_x)
+    # from PIL import Image
+    # img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(10,10)), 'RGB')
+    # img.save(os.path.join("plots", '%s_ground_truth_%s.png' % (args.data_set, "test")))
+    # quit()
+    # #
     #
-
-
+    #
 
 
     sample_x = []

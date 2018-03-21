@@ -394,23 +394,29 @@ if not os.path.exists(args.save_dir):
 test_bpd = []
 lr = args.learning_rate
 
+import svae_loading as vl
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 with tf.Session(config=config) as sess:
 
+    vl.load_vae(sess, vl.saver)
+
+    vl_mgen = um.RandomRectangleMaskGenerator(img_shape[0], img_shape[1], max_ratio=.5)
+
     ckpt_file = args.save_dir + '/params_' + args.data_set + '.ckpt'
     print('restoring parameters from', ckpt_file)
     saver.restore(sess, ckpt_file)
 
-    sample_mgen = um.CenterMaskGenerator(obs_shape[0], obs_shape[1], 1.)
-
     d = next(test_data)
+
+    feed_dict = vl.make_feed_dict(d)
+    zs = sess.run(vl.zs, feed_dict=feed_dict)
 
     sample_x = []
     for i in range(args.num_samples):
         d = next(test_data)
-        sample_x.append(sample_from_model(sess, data=d, mask_generator=sample_mgen))
+        sample_x.append(sample_from_model(sess, data=d, z=np.concatenate(zs, axis=0)))
     sample_x = np.concatenate(sample_x,axis=0)
 
     sample_x = sample_x * 127.5 + 127.5

@@ -13,7 +13,7 @@ import svae_loading as v
 import utils.mfunc as uf
 
 
-test_data = celeba_data.DataLoader(v.FLAGS.data_dir, 'valid', v.FLAGS.batch_size*v.FLAGS.nr_gpu, shuffle=False, size=128)
+test_data = celeba_data.DataLoader(v.FLAGS.data_dir, 'valid', v.FLAGS.batch_size*v.FLAGS.nr_gpu, shuffle=False, size=64)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

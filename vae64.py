@@ -25,8 +25,8 @@ tf.flags.DEFINE_boolean("debug", default_value=False, docstring="is debugging?")
 FLAGS = tf.flags.FLAGS
 
 FLAGS.z_dim = 32
-FLAGS.beta = 50.
-FLAGS.save_dir = "/data/ziz/jxu/models/vae64"
+FLAGS.beta = 150.
+FLAGS.save_dir = "/data/ziz/jxu/models/vae64-beta150"
 
 kernel_initializer = None #tf.random_normal_initializer()
 

@@ -38,7 +38,7 @@ with tf.Session(config=config) as sess:
     for i in range(32):
         s = scale[img_id][i]
         for k in range(7):
-            locs[i*7+k][i] = (k-3)
+            locs[i*7+k][i] = (k-3)*2
 
     feed_dict = vl.make_feed_dict_z(locs)
     ret = sess.run(vl.x_hats, feed_dict=feed_dict)

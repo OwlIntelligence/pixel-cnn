@@ -106,12 +106,7 @@ mxs = tf.multiply(xs, tf.stack([ms for k in range(3)], axis=-1))
 
 locs = [None for i in range(FLAGS.nr_gpu)]
 log_vars = [None for i in range(FLAGS.nr_gpu)]
-zs = [None for i in range(FLAGS.nr_gpu)]
 x_hats = [None for i in range(FLAGS.nr_gpu)]
-MSEs = [None for i in range(FLAGS.nr_gpu)]
-KLDs = [None for i in range(FLAGS.nr_gpu)]
-losses = [None for i in range(FLAGS.nr_gpu)]
-grads = [None for i in range(FLAGS.nr_gpu)]
 
 
 flatten = tf.contrib.layers.flatten

@@ -7,7 +7,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
-
+import data.celeba_data as celeba_data
 from pixel_cnn_pp import nn
 from pixel_cnn_pp.model import model_spec
 from utils import plotting
@@ -15,7 +15,7 @@ import utils.mask as um
 import utils.mfunc as uf
 import utils.grid as grid
 
-
+test_data = celeba_data.DataLoader(v.FLAGS.data_dir, 'test', v.FLAGS.batch_size*v.FLAGS.nr_gpu, shuffle=False, size=64)
 
 import vae_loading as vl
 

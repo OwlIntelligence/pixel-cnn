@@ -31,7 +31,7 @@ def tile_images(imgs, size=(6, 6)):
     all_images = np.zeros((img_h*size[0], img_w*size[1], 3), np.uint8)
     for j in range(size[0]):
         for i in range(size[1]):
-            all_images[img_h*j:img_h*(j+1), img_w*i:img_w*(i+1), :] = imgs[j*size[0]+i, :, :, :]
+            all_images[img_h*j:img_h*(j+1), img_w*i:img_w*(i+1), :] = imgs[j*size[1]+i, :, :, :]
     return all_images
 
 

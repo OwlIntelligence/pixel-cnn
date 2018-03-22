@@ -28,7 +28,9 @@ with tf.Session(config=config) as sess:
     d = next(test_data)
     d = next(test_data)
 
-    feed_dict = vl.make_feed_dict(d)
+    mgen = um.RectangleMaskGenerator(64, 64, (0, 64, 24, 0))
+
+    feed_dict = vl.make_feed_dict(d, mgen)
     ret = sess.run(vl.locs+vl.log_vars, feed_dict=feed_dict)
     locs, log_vars = np.concatenate(ret[:len(ret)//2], axis=0), np.concatenate(ret[len(ret)//2:], axis=0)
     scale = np.sqrt(np.exp(log_vars))

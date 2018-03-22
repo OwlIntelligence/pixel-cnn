@@ -97,7 +97,7 @@ def vae_model(x, z_dim):
 #model_opt = {"z_dim": FLAGS.z_dim}
 #model = tf.make_template('vae', vae_model)
 
-zs = [tf.placeholder(tf.float32, shape=(None, 64, 64, 3)) for i in range(FLAGS.nr_gpu)]
+zs = [tf.placeholder(tf.float32, shape=(None, 32)) for i in range(FLAGS.nr_gpu)]
 
 xs = [tf.placeholder(tf.float32, shape=(None, 64, 64, 3)) for i in range(FLAGS.nr_gpu)]
 ms = [tf.placeholder_with_default(np.ones((FLAGS.batch_size, 64, 64), dtype=np.float32), shape=(None, 64, 64)) for i in range(FLAGS.nr_gpu)]

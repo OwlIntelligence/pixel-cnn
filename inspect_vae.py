@@ -28,5 +28,7 @@ with tf.Session(config=config) as sess:
     d = next(test_data)
 
     feed_dict = vl.make_feed_dict(d)
-    ret = sess.run([vl.locs+vl.log_vars, feed_dict=feed_dict)
-    print(ret)
+    ret = sess.run(vl.locs+vl.log_vars, feed_dict=feed_dict)
+    locs, log_vars = ret[:len(ret)//2], ret[len(ret)//2:]
+    print(locs[0])
+    print(log_vars[0])

@@ -39,5 +39,5 @@ with tf.Session(config=config) as sess:
     sample_x = np.rint(sample_x * 255.)
 
     from PIL import Image
-    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(8,8)), 'RGB')
+    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(4,4)), 'RGB')
     img.save(os.path.join("plots", '%s_vae64_%s.png' % (vl.FLAGS.data_set, "test")))

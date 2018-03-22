@@ -26,7 +26,7 @@ FLAGS = tf.flags.FLAGS
 
 FLAGS.z_dim = 32
 FLAGS.beta = 50.
-FLAGS.save_dir = "/data/ziz/jxu/models/vae64"
+FLAGS.save_dir = "/data/ziz/jxu/models/vae64-beta200"
 FLAGS.debug = True
 
 kernel_initializer = None #tf.random_normal_initializer()

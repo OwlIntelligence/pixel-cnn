@@ -32,13 +32,13 @@ with tf.Session(config=config) as sess:
     locs, log_vars = np.concatenate(ret[:len(ret)//2], axis=0), np.concatenate(ret[len(ret)//2:], axis=0)
     scale = np.sqrt(np.exp(log_vars))
 
-    locs = np.array([locs[7] for i in range(32*5)])
+    img_id = 27
+
+    locs = np.array([locs[img_id] for i in range(32*7)])
     for i in range(32):
-        s = scale[7][i]
-        locs[i*5][i] += 2 #+= 5*s
-        locs[i*5+1][i] += 1 #-= 5*s
-        locs[i*5+3][i] -= 1
-        locs[i*5+4][i] -= 2
+        s = scale[img_id][i]
+        for k in range(7):
+            locs[i*7+k][i] = (k-3)
 
     feed_dict = vl.make_feed_dict_z(locs)
     ret = sess.run(vl.x_hats, feed_dict=feed_dict)
@@ -49,5 +49,5 @@ with tf.Session(config=config) as sess:
     print(sample_x.shape)
 
     from PIL import Image
-    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(32, 5)), 'RGB')
+    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(32, 7)), 'RGB')
     img.save(os.path.join("plots", '%s_vae64_%s.png' % (vl.FLAGS.data_set, "test")))

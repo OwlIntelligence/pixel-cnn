@@ -18,13 +18,14 @@ tf.flags.DEFINE_float("lam", default_value=1., docstring="")
 tf.flags.DEFINE_float("beta", default_value=1., docstring="")
 tf.flags.DEFINE_string("data_dir", default_value="/data/ziz/not-backed-up/jxu/CelebA", docstring="")
 tf.flags.DEFINE_string("save_dir", default_value="/data/ziz/jxu/models/vae-test", docstring="")
-tf.flags.DEFINE_string("data_set", default_value="celeba128", docstring="")
+tf.flags.DEFINE_string("data_set", default_value="celeba64", docstring="")
 tf.flags.DEFINE_boolean("load_params", default_value=False, docstring="load_parameters from save_dir?")
 tf.flags.DEFINE_boolean("debug", default_value=False, docstring="is debugging?")
 
 FLAGS = tf.flags.FLAGS
 
 FLAGS.z_dim = 32
+FLAGS.beta = 50.
 FLAGS.save_dir = "/data/ziz/jxu/models/vae64"
 
 kernel_initializer = None #tf.random_normal_initializer()

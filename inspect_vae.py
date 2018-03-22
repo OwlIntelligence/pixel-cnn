@@ -34,5 +34,10 @@ with tf.Session(config=config) as sess:
 
     feed_dict = vl.make_feed_dict_z(locs)
     ret = sess.run(vl.x_hats, feed_dict=feed_dict)
-    ret = np.concatenate(ret, axis=0)
-    print(ret.shape)
+    sample_x = np.concatenate(ret, axis=0)
+
+    sample_x = np.rint(sample_x * 255.)
+
+    from PIL import Image
+    img = Image.fromarray(uf.tile_images(sample_x.astype(np.uint8), size=(8,8)), 'RGB')
+    img.save(os.path.join("plots", '%s_vae64_%s.png' % (vl.FLAGS.data_set, "test")))

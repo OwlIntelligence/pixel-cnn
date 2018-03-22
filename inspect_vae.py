@@ -29,6 +29,6 @@ with tf.Session(config=config) as sess:
 
     feed_dict = vl.make_feed_dict(d)
     ret = sess.run(vl.locs+vl.log_vars, feed_dict=feed_dict)
-    locs, log_vars = ret[:len(ret)//2], ret[len(ret)//2:]
+    locs, log_vars = np.concatenate(ret[:len(ret)//2], axis=0), np.concatenate(ret[len(ret)//2:], axis=0)
     print(locs[0])
     print(log_vars[0])

@@ -33,7 +33,7 @@ with tf.Session(config=config) as sess:
     locs, log_vars = np.concatenate(ret[:len(ret)//2], axis=0), np.concatenate(ret[len(ret)//2:], axis=0)
     scale = np.sqrt(np.exp(log_vars))
 
-    img_id = 1
+    img_id = 2
 
     locs = np.array([locs[img_id] for i in range(32*9)])
     for i in range(32):

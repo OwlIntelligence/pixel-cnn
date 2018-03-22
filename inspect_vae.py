@@ -15,9 +15,9 @@ import utils.mask as um
 import utils.mfunc as uf
 import utils.grid as grid
 
-test_data = celeba_data.DataLoader(v.FLAGS.data_dir, 'test', v.FLAGS.batch_size*v.FLAGS.nr_gpu, shuffle=False, size=64)
-
 import vae_loading as vl
+test_data = celeba_data.DataLoader(vl.FLAGS.data_dir, 'test', v.FLAGS.batch_size*v.FLAGS.nr_gpu, shuffle=False, size=128)
+
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

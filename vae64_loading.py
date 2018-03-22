@@ -111,10 +111,11 @@ x_hats = [None for i in range(FLAGS.nr_gpu)]
 
 flatten = tf.contrib.layers.flatten
 
-for i in range(FLAGS.nr_gpu):
-    with tf.device('/gpu:%d' % i):
-        locs[i], log_vars[i] = inference_network(mxs[i])
-        x_hats[i] = generative_network(zs[i])
+with tf.variable_scope("vae"):
+    for i in range(FLAGS.nr_gpu):
+        with tf.device('/gpu:%d' % i):
+            locs[i], log_vars[i] = inference_network(mxs[i])
+            x_hats[i] = generative_network(zs[i])
 
 saver = tf.train.Saver()
 

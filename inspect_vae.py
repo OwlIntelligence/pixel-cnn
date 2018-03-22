@@ -35,8 +35,8 @@ with tf.Session(config=config) as sess:
     locs = np.array([locs[8] for i in range(32*3)])
     for i in range(32):
         s = scale[8][i]
-        locs[i*3][i] += s
-        locs[i*3+2][i] -= s
+        locs[i*3][i] += 3*s
+        locs[i*3+2][i] -= 3*s
 
     feed_dict = vl.make_feed_dict_z(locs)
     ret = sess.run(vl.x_hats, feed_dict=feed_dict)

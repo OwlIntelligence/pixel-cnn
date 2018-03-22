@@ -16,7 +16,7 @@ import utils.mfunc as uf
 import utils.grid as grid
 
 import vae_loading as vl
-test_data = celeba_data.DataLoader(vl.FLAGS.data_dir, 'test', v.FLAGS.batch_size*v.FLAGS.nr_gpu, shuffle=False, size=128)
+test_data = celeba_data.DataLoader(vl.FLAGS.data_dir, 'test', vl.FLAGS.batch_size*vl.FLAGS.nr_gpu, shuffle=False, size=128)
 
 
 config = tf.ConfigProto()

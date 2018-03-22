@@ -31,5 +31,8 @@ with tf.Session(config=config) as sess:
     ret = sess.run(vl.locs+vl.log_vars, feed_dict=feed_dict)
     locs, log_vars = np.concatenate(ret[:len(ret)//2], axis=0), np.concatenate(ret[len(ret)//2:], axis=0)
     scale = np.sqrt(np.exp(log_vars))
-    for l, s in zip(locs[0], scale[0]):
-        print(l, s)
+
+    feed_dict = vl.make_feed_dict_z(locs)
+    ret = sess.run(vl.x_hats, feed_dict=feed_dict)
+    ret = np.concatenate(ret, axis=0)
+    print(ret.shape)
